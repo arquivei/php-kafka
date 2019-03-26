@@ -30,6 +30,13 @@
     "sort-packages": true,
     "optimize-autoloader": true
   },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Kafka\\Consumer\\Laravel\\Providers\\PhpKafkaConsumerProvider"
+      ]
+    }
+  },
   "minimum-stability": "dev",
   "prefer-stable": true
 }
