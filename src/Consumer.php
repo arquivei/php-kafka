@@ -23,7 +23,7 @@ class Consumer
         $this->consumer->subscribe([$this->config->getTopic()]);
 
         while (true) {
-            $message = $this->consumer->consume(1000);
+            $message = $this->consumer->consume(500);
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
                     $this->executeMessage($message);
