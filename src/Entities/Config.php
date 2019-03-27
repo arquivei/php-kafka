@@ -2,6 +2,7 @@
 
 namespace Kafka\Consumer\Entities;
 
+use Kafka\Consumer\Entities\Config\Commit;
 use Kafka\Consumer\Entities\Config\Sasl;
 use Kafka\Consumer\Entities\Config\Consumer;
 use Kafka\Consumer\Entities\Config\MaxAttempt;
@@ -11,6 +12,7 @@ class Config
     private $sasl;
     private $topic;
     private $broker;
+    private $commit;
     private $groupId;
     private $consumer;
     private $maxAttempts;
@@ -20,6 +22,7 @@ class Config
         Sasl $sasl,
         string $topic,
         string $broker,
+        Commit $commit,
         string $groupId,
         Consumer $consumer,
         MaxAttempt $maxAttempts,
@@ -28,6 +31,7 @@ class Config
         $this->sasl = $sasl;
         $this->topic = $topic;
         $this->broker = $broker;
+        $this->commit = $commit;
         $this->groupId = $groupId;
         $this->consumer = $consumer;
         $this->maxAttempts = $maxAttempts;
@@ -47,6 +51,11 @@ class Config
     public function getBroker(): string
     {
         return $this->broker;
+    }
+
+    public function getCommit(): Commit
+    {
+        return $this->commit;
     }
 
     public function getGroupId(): string

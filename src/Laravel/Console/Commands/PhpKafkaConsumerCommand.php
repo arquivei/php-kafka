@@ -3,10 +3,11 @@
 namespace Kafka\Consumer\Laravel\Console\Commands;
 
 use Illuminate\Console\Command;
+use Kafka\Consumer\Entities\Config\Commit;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--groupId=} {--onlyDefault=} {--maxAttempt=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--groupId=} {--onlyDefault=} {--maxAttempt=} {--commitBatch=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
@@ -14,6 +15,7 @@ class PhpKafkaConsumerCommand extends Command
     private $config;
     private $groupId;
     private $maxAttempt;
+    private $commitBatch;
     private $onlyDefault;
 
     public function __construct()
@@ -27,6 +29,7 @@ class PhpKafkaConsumerCommand extends Command
         $this->topic = $this->option('topic');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
+        $this->commitBatch = (int)$this->option('commitBatch');
         $this->onlyDefault = (bool)$this->option('onlyDefault');
 
         $config = new \Kafka\Consumer\Entities\Config(
@@ -37,6 +40,7 @@ class PhpKafkaConsumerCommand extends Command
             ),
             $this->getTopic(),
             $this->config['broker'],
+            new Commit($this->getCommitBatch()),
             $this->getGroupId(),
             new \Kafka\Consumer\Entities\Config\Consumer(
                 $this->config['consumers']['default'],
@@ -68,6 +72,11 @@ class PhpKafkaConsumerCommand extends Command
     private function getMaxAttempt(): ?int
     {
         return (is_int($this->maxAttempt) && $this->maxAttempt >= 1) ? $this->maxAttempt : null;
+    }
+
+    private function getCommitBatch(): ?int
+    {
+        return (is_int($this->commitBatch) && $this->commitBatch > 1) ? $this->commitBatch : null;
     }
 }
 

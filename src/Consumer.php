@@ -9,6 +9,7 @@ use Kafka\Consumer\Exceptions\KafkaConsumerException;
 class Consumer
 {
     private $config;
+    private $commits;
     private $consumer;
     private $consumerClassValidator;
 
@@ -23,6 +24,7 @@ class Consumer
         $this->consumer = new \RdKafka\KafkaConsumer($this->setConf());
         $this->consumer->subscribe([$this->config->getTopic()]);
 
+        $this->commits = 0;
         while (true) {
             $message = $this->consumer->consume(500);
             switch ($message->err) {
@@ -64,7 +66,18 @@ class Consumer
 
     private function commit(\RdKafka\Message $message): void
     {
-        $this->consumer->commit($message);
+        if (!$this->config->getCommit()->isCommitInBatch()){
+            $this->consumer->commit($message);
+            return;
+        }
+
+        if ($this->commits >= $this->config->getCommit()->getValue()){
+            $this->consumer->commit();
+            $this->commits = 0;
+            return;
+        }
+
+        $this->commits++;
     }
 
     private function executeMessage(\RdKafka\Message $message): void
