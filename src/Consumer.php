@@ -4,6 +4,7 @@ namespace Kafka\Consumer;
 
 use Kafka\Consumer\Entities\Config;
 use Kafka\Consumer\Validators\ConsumerClass;
+use Kafka\Consumer\Exceptions\KafkaConsumerException;
 
 class Consumer
 {
@@ -34,7 +35,7 @@ class Consumer
                     break;
                 default:
                     // ERROR
-                    throw new \Exception('Error in consume kafka topic');
+                    throw new KafkaConsumerException($message->errstr());
                     break;
             }
         }
