@@ -3,11 +3,13 @@
 namespace Kafka\Consumer\Laravel\Console\Commands;
 
 use Illuminate\Console\Command;
+use Kafka\Consumer\Contracts\Consumer;
 use Kafka\Consumer\Entities\Config\Commit;
+use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--groupId=} {--onlyDefault=} {--maxAttempt=} {--commitBatch=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commitBatch=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
@@ -26,11 +28,14 @@ class PhpKafkaConsumerCommand extends Command
 
     public function handle()
     {
+        $consumer = $this->option('consumer');
+        $this->validateConsumer($consumer);
+
         $this->topic = $this->option('topic');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
         $this->commitBatch = (int)$this->option('commitBatch');
-        $this->onlyDefault = (bool)$this->option('onlyDefault');
+
 
         $config = new \Kafka\Consumer\Entities\Config(
             new \Kafka\Consumer\Entities\Config\Sasl(
@@ -42,11 +47,7 @@ class PhpKafkaConsumerCommand extends Command
             $this->config['broker'],
             new Commit($this->getCommitBatch()),
             $this->getGroupId(),
-            new \Kafka\Consumer\Entities\Config\Consumer(
-                $this->config['consumers']['default'],
-                $this->config['consumers']['customs'],
-                $this->getOnlyDefault()
-            ),
+            $consumer,
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
             $this->config['securityProtocol']
         );
@@ -64,11 +65,6 @@ class PhpKafkaConsumerCommand extends Command
         return (is_string($this->groupId) && strlen($this->groupId) > 1) ? $this->groupId : $this->config['groupId'];
     }
 
-    private function getOnlyDefault(): bool
-    {
-        return is_bool($this->onlyDefault) ? $this->onlyDefault : false;
-    }
-
     private function getMaxAttempt(): ?int
     {
         return (is_int($this->maxAttempt) && $this->maxAttempt >= 1) ? $this->maxAttempt : null;
@@ -77,6 +73,13 @@ class PhpKafkaConsumerCommand extends Command
     private function getCommitBatch(): ?int
     {
         return (is_int($this->commitBatch) && $this->commitBatch > 1) ? $this->commitBatch : null;
+    }
+
+    private function validateConsumer(?string $consumer): void
+    {
+        if (!class_exists($consumer) || !in_array(Consumer::class, class_implements($consumer))){
+            throw new InvalidConsumerException();
+        }
     }
 }
 

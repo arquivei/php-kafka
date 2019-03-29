@@ -3,7 +3,6 @@
 namespace Kafka\Consumer;
 
 use Kafka\Consumer\Entities\Config;
-use Kafka\Consumer\Validators\ConsumerClass;
 use Kafka\Consumer\Exceptions\KafkaConsumerException;
 
 class Consumer
@@ -11,12 +10,10 @@ class Consumer
     private $config;
     private $commits;
     private $consumer;
-    private $consumerClassValidator;
 
     public function __construct(Config $config)
     {
         $this->config = $config;
-        $this->consumerClassValidator = new ConsumerClass();
     }
 
     public function consume(): void
@@ -83,16 +80,11 @@ class Consumer
     private function executeMessage(\RdKafka\Message $message): void
     {
         $attempts = 1;
-        $success = true;
+        $success = false;
         do {
             try {
-                $classConsumer = $this->consumerClassValidator->validate(
-                    $this->config->getConsumer(),
-                    $message
-                );
-                if (!is_null($classConsumer)) {
-                    (new $classConsumer($message->payload))->handle();
-                }
+                $consumer = $this->config->getConsumer();
+                (new $consumer($message->payload))->handle();
                 $success = true;
                 $this->commit($message);
             } catch (\Throwable $exception) {
