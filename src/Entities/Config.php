@@ -3,7 +3,6 @@
 namespace Kafka\Consumer\Entities;
 
 use Kafka\Consumer\Entities\Config\Sasl;
-use Kafka\Consumer\Entities\Config\Commit;
 use Kafka\Consumer\Entities\Config\MaxAttempt;
 
 class Config

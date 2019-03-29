@@ -43,19 +43,15 @@ class Consumer
     private function setConf(): \RdKafka\Conf
     {
         $conf = new \RdKafka\Conf();
-        $conf->set('security.protocol', $this->config->getSecurityProtocol());
-        $conf->set('bootstrap.servers', $this->config->getBroker());
+        $conf->set('enable.auto.commit', 'false');
         $conf->set('group.id', $this->config->getGroupId());
-        $conf->set('security.protocol',$this->config->getSecurityProtocol());
+        $conf->set('bootstrap.servers', $this->config->getBroker());
+        $conf->set('security.protocol', $this->config->getSecurityProtocol());
         if ($this->config->isPlainText()) {
-            $conf->set('sasl.mechanisms', $this->config->getSasl()->getMechanisms());
             $conf->set('sasl.username', $this->config->getSasl()->getUsername());
             $conf->set('sasl.password', $this->config->getSasl()->getPassword());
+            $conf->set('sasl.mechanisms', $this->config->getSasl()->getMechanisms());
         }
-        $conf->set('enable.auto.commit', 'false');
-        $topicConf = new \RdKafka\TopicConf();
-        $topicConf->set('auto.offset.reset', 'smallest');
-        $conf->setDefaultTopicConf($topicConf);
 
         return $conf;
     }
@@ -85,12 +81,11 @@ class Consumer
 
     private function commit(): void
     {
+        $this->commits++;
         if ($this->commits >= $this->config->getCommit()){
             $this->consumer->commit();
             $this->commits = 0;
             return;
         }
-
-        $this->commits++;
     }
 }
