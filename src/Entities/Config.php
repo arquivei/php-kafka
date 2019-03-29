@@ -21,7 +21,7 @@ class Config
         Sasl $sasl,
         string $topic,
         string $broker,
-        Commit $commit,
+        int $commit,
         string $groupId,
         string $consumer,
         MaxAttempt $maxAttempts,
@@ -52,7 +52,7 @@ class Config
         return $this->broker;
     }
 
-    public function getCommit(): Commit
+    public function getCommit(): int
     {
         return $this->commit;
     }

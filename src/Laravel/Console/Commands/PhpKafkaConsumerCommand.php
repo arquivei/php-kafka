@@ -4,12 +4,12 @@ namespace Kafka\Consumer\Laravel\Console\Commands;
 
 use Illuminate\Console\Command;
 use Kafka\Consumer\Contracts\Consumer;
-use Kafka\Consumer\Entities\Config\Commit;
+use Kafka\Consumer\Exceptions\InvalidCommitException;
 use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commitBatch=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
@@ -17,8 +17,6 @@ class PhpKafkaConsumerCommand extends Command
     private $config;
     private $groupId;
     private $maxAttempt;
-    private $commitBatch;
-    private $onlyDefault;
 
     public function __construct()
     {
@@ -29,12 +27,13 @@ class PhpKafkaConsumerCommand extends Command
     public function handle()
     {
         $consumer = $this->option('consumer');
+        $commmit = $this->option('commit');
         $this->validateConsumer($consumer);
+        $this->validateCommit($commmit);
 
         $this->topic = $this->option('topic');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
-        $this->commitBatch = (int)$this->option('commitBatch');
 
 
         $config = new \Kafka\Consumer\Entities\Config(
@@ -45,7 +44,7 @@ class PhpKafkaConsumerCommand extends Command
             ),
             $this->getTopic(),
             $this->config['broker'],
-            new Commit($this->getCommitBatch()),
+            $commmit,
             $this->getGroupId(),
             $consumer,
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
@@ -70,14 +69,16 @@ class PhpKafkaConsumerCommand extends Command
         return (is_int($this->maxAttempt) && $this->maxAttempt >= 1) ? $this->maxAttempt : null;
     }
 
-    private function getCommitBatch(): ?int
+    private function validateCommit(?int $commit): void
     {
-        return (is_int($this->commitBatch) && $this->commitBatch > 1) ? $this->commitBatch : null;
+        if (is_null($commit) || $commit < 1) {
+            throw new InvalidCommitException();
+        }
     }
 
     private function validateConsumer(?string $consumer): void
     {
-        if (!class_exists($consumer) || !in_array(Consumer::class, class_implements($consumer))){
+        if (!class_exists($consumer) || !in_array(Consumer::class, class_implements($consumer))) {
             throw new InvalidConsumerException();
         }
     }

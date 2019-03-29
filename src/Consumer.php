@@ -42,39 +42,22 @@ class Consumer
 
     private function setConf(): \RdKafka\Conf
     {
-        $topicConf = new \RdKafka\TopicConf();
-        $topicConf->set('auto.offset.reset', 'smallest');
-
         $conf = new \RdKafka\Conf();
-        $conf->set('group.id', $this->config->getGroupId());
-        $conf->set('metadata.broker.list', $this->config->getBroker());
-        $conf->set('enable.auto.commit', 'false');
-        $conf->setDefaultTopicConf($topicConf);
         $conf->set('security.protocol', $this->config->getSecurityProtocol());
-
+        $conf->set('bootstrap.servers', $this->config->getBroker());
+        $conf->set('group.id', $this->config->getGroupId());
+        $conf->set('security.protocol',$this->config->getSecurityProtocol());
         if ($this->config->isPlainText()) {
             $conf->set('sasl.mechanisms', $this->config->getSasl()->getMechanisms());
             $conf->set('sasl.username', $this->config->getSasl()->getUsername());
             $conf->set('sasl.password', $this->config->getSasl()->getPassword());
         }
+        $conf->set('enable.auto.commit', 'false');
+        $topicConf = new \RdKafka\TopicConf();
+        $topicConf->set('auto.offset.reset', 'smallest');
+        $conf->setDefaultTopicConf($topicConf);
 
         return $conf;
-    }
-
-    private function commit(\RdKafka\Message $message): void
-    {
-        if (!$this->config->getCommit()->isCommitInBatch()){
-            $this->consumer->commit($message);
-            return;
-        }
-
-        if ($this->commits >= $this->config->getCommit()->getValue()){
-            $this->consumer->commit();
-            $this->commits = 0;
-            return;
-        }
-
-        $this->commits++;
     }
 
     private function executeMessage(\RdKafka\Message $message): void
@@ -86,17 +69,28 @@ class Consumer
                 $consumer = $this->config->getConsumer();
                 (new $consumer($message->payload))->handle();
                 $success = true;
-                $this->commit($message);
+                $this->commit();
             } catch (\Throwable $exception) {
                 if (
                     $this->config->getMaxAttempts()->hasMaxAttempts() &&
                     $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)
                 ) {
                     $success = true;
-                    $this->commit($message);
+                    $this->commit();
                 }
                 $attempts++;
             }
         } while (!$success);
+    }
+
+    private function commit(): void
+    {
+        if ($this->commits >= $this->config->getCommit()){
+            $this->consumer->commit();
+            $this->commits = 0;
+            return;
+        }
+
+        $this->commits++;
     }
 }
