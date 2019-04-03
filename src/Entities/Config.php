@@ -2,6 +2,7 @@
 
 namespace Kafka\Consumer\Entities;
 
+use Kafka\Consumer\Contracts\Consumer;
 use Kafka\Consumer\Entities\Config\Sasl;
 use Kafka\Consumer\Entities\Config\MaxAttempt;
 
@@ -22,7 +23,7 @@ class Config
         string $broker,
         int $commit,
         string $groupId,
-        string $consumer,
+        Consumer $consumer,
         MaxAttempt $maxAttempts,
         string $securityProtocol
     ) {
@@ -61,7 +62,7 @@ class Config
         return $this->groupId;
     }
 
-    public function getConsumer(): string
+    public function getConsumer(): Consumer
     {
         return $this->consumer;
     }

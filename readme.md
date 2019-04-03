@@ -44,14 +44,7 @@ use Kafka\Consumer\Entities\Config\MaxAttempt;
 
 class DefaultConsumer implements Consumer
 {
-    private $message;
-
-    public function __construct($message)
-    {
-        $this->message = $message;
-    }
-
-    public function handle(): void
+    public function handle(string $message): void
     {
         print 'Init: ' . date('Y-m-d H:i:s') . PHP_EOL;
         sleep(2);
@@ -65,7 +58,7 @@ $config = new Config(
     'broker:port',
     1,
     'php-kafka-consumer-group-id',
-    DefaultConsumer::class,
+    new DefaultConsumer(),
     new MaxAttempt(1),
     'security-protocol'
 );

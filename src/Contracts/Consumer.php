@@ -4,5 +4,5 @@ namespace Kafka\Consumer\Contracts;
 
 interface Consumer
 {
-    public function handle(): void;
+    public function handle(string $message): void;
 }

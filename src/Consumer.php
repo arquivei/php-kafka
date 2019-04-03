@@ -2,18 +2,21 @@
 
 namespace Kafka\Consumer;
 
+use Kafka\Consumer\Log\Logger;
 use Kafka\Consumer\Entities\Config;
 use Kafka\Consumer\Exceptions\KafkaConsumerException;
 
 class Consumer
 {
     private $config;
+    private $logger;
     private $commits;
     private $consumer;
 
     public function __construct(Config $config)
     {
         $this->config = $config;
+        $this->logger = new Logger();
     }
 
     public function consume(): void
@@ -62,11 +65,11 @@ class Consumer
         $success = false;
         do {
             try {
-                $consumer = $this->config->getConsumer();
-                (new $consumer($message->payload))->handle();
+                $this->config->getConsumer()->handle($message->payload);
                 $success = true;
                 $this->commit();
             } catch (\Throwable $exception) {
+                $this->logger->error($message->offset, $attempts, $exception);
                 if (
                     $this->config->getMaxAttempts()->hasMaxAttempts() &&
                     $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)

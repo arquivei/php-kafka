@@ -46,7 +46,7 @@ class PhpKafkaConsumerCommand extends Command
             $this->config['broker'],
             $commmit,
             $this->getGroupId(),
-            $consumer,
+            new $consumer(),
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
             $this->config['securityProtocol']
         );
