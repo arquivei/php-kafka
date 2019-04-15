@@ -9,10 +9,11 @@ use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
+    private $dlq;
     private $topic;
     private $config;
     private $groupId;
@@ -31,6 +32,7 @@ class PhpKafkaConsumerCommand extends Command
         $this->validateConsumer($consumer);
         $this->validateCommit($commmit);
 
+        $this->dlq = $this->option('dlq');
         $this->topic = $this->option('topic');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
@@ -48,7 +50,8 @@ class PhpKafkaConsumerCommand extends Command
             $this->getGroupId(),
             new $consumer(),
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
-            $this->config['securityProtocol']
+            $this->config['securityProtocol'],
+            $this->getDlq()
         );
 
         (new \Kafka\Consumer\Consumer($config))->consume();
@@ -67,6 +70,11 @@ class PhpKafkaConsumerCommand extends Command
     private function getMaxAttempt(): ?int
     {
         return (is_int($this->maxAttempt) && $this->maxAttempt >= 1) ? $this->maxAttempt : null;
+    }
+
+    private function getDlq(): ?string
+    {
+        return (is_string($this->dlq) && strlen($this->dlq) > 1) ? $this->dlq : null;
     }
 
     private function validateCommit(?int $commit): void

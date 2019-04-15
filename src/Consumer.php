@@ -12,6 +12,7 @@ class Consumer
     private $logger;
     private $commits;
     private $consumer;
+    private $producer;
 
     public function __construct(Config $config)
     {
@@ -22,6 +23,7 @@ class Consumer
     public function consume(): void
     {
         $this->consumer = new \RdKafka\KafkaConsumer($this->setConf());
+        $this->producer = new \RdKafka\Producer($this->setConf());
         $this->consumer->subscribe([$this->config->getTopic()]);
 
         $this->commits = 0;
@@ -70,6 +72,13 @@ class Consumer
                 $this->commit();
             } catch (\Throwable $exception) {
                 $this->logger->error($message->offset, $attempts, $exception);
+                if (!is_null($this->config->getDlq())) {
+                    $this->sendToDql($message);
+                    $success = true;
+                    $this->commit();
+                    continue;
+                }
+
                 if (
                     $this->config->getMaxAttempts()->hasMaxAttempts() &&
                     $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)
@@ -82,10 +91,16 @@ class Consumer
         } while (!$success);
     }
 
+    private function sendToDql(\RdKafka\Message $message): void
+    {
+        $topic = $this->producer->newTopic($this->config->getDlq());
+        $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message->payload);
+    }
+
     private function commit(): void
     {
         $this->commits++;
-        if ($this->commits >= $this->config->getCommit()){
+        if ($this->commits >= $this->config->getCommit()) {
             $this->consumer->commit();
             $this->commits = 0;
             return;

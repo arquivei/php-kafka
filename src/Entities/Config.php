@@ -8,6 +8,7 @@ use Kafka\Consumer\Entities\Config\MaxAttempt;
 
 class Config
 {
+    private $dlq;
     private $sasl;
     private $topic;
     private $broker;
@@ -25,8 +26,10 @@ class Config
         string $groupId,
         Consumer $consumer,
         MaxAttempt $maxAttempts,
-        string $securityProtocol
+        string $securityProtocol,
+        ?string $dlq
     ) {
+        $this->dlq = $dlq;
         $this->sasl = $sasl;
         $this->topic = $topic;
         $this->broker = $broker;
@@ -80,5 +83,10 @@ class Config
     public function isPlainText(): bool
     {
         return $this->securityProtocol == 'SASL_PLAINTEXT';
+    }
+
+    public function getDlq(): ?string
+    {
+        return $this->dlq;
     }
 }
