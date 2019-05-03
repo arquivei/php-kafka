@@ -11,6 +11,6 @@ class Logger
             'attempt' => $attempts,
             'time' => date('Y-m-d H:i:s'),
         ]);
-        print "\033[0;31m[PHP-KAFKA-CONSUMER-ERROR][$messageId]: $error\033[0m" . PHP_EOL;
+        print "[PHP-KAFKA-CONSUMER-ERROR][$messageId]: $error" . PHP_EOL;
     }
 }

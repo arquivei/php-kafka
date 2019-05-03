@@ -69,22 +69,16 @@ class Consumer
             try {
                 $this->config->getConsumer()->handle($message->payload);
                 $success = true;
-                $this->commit();
+                $this->commit($message);
             } catch (\Throwable $exception) {
                 $this->logger->error($message->offset, $attempts, $exception);
-                if (!is_null($this->config->getDlq())) {
-                    $this->sendToDql($message);
-                    $success = true;
-                    $this->commit();
-                    continue;
-                }
 
                 if (
                     $this->config->getMaxAttempts()->hasMaxAttempts() &&
                     $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)
                 ) {
                     $success = true;
-                    $this->commit();
+                    $this->commit($message, false);
                 }
                 $attempts++;
             }
@@ -97,8 +91,15 @@ class Consumer
         $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message->payload);
     }
 
-    private function commit(): void
+    private function commit(\RdKafka\Message $message, bool $success = true): void
     {
+        if (!$success && !is_null($this->config->getDlq())) {
+            $this->sendToDql($message);
+            $this->consumer->commit();
+            $this->commits = 0;
+            return;
+        }
+
         $this->commits++;
         if ($this->commits >= $this->config->getCommit()) {
             $this->consumer->commit();
