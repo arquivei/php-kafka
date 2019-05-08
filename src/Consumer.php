@@ -47,11 +47,16 @@ class Consumer
 
     private function setConf(): \RdKafka\Conf
     {
+        $topicConf = new \RdKafka\TopicConf();
+        $topicConf->set('auto.offset.reset', 'smallest');
+
         $conf = new \RdKafka\Conf();
         $conf->set('enable.auto.commit', 'false');
         $conf->set('group.id', $this->config->getGroupId());
         $conf->set('bootstrap.servers', $this->config->getBroker());
         $conf->set('security.protocol', $this->config->getSecurityProtocol());
+        $conf->setDefaultTopicConf($topicConf);
+
         if ($this->config->isPlainText()) {
             $conf->set('sasl.username', $this->config->getSasl()->getUsername());
             $conf->set('sasl.password', $this->config->getSasl()->getPassword());
