@@ -69,25 +69,33 @@ class Consumer
     private function executeMessage(\RdKafka\Message $message): void
     {
         $attempts = 1;
-        $success = false;
         do {
             try {
                 $this->config->getConsumer()->handle($message->payload);
                 $success = true;
-                $this->commit($message);
+                $this->commit($message, true);
             } catch (\Throwable $exception) {
                 $this->logger->error($message->offset, $attempts, $exception);
 
-                if (
-                    $this->config->getMaxAttempts()->hasMaxAttempts() &&
-                    $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)
-                ) {
-                    $success = true;
-                    $this->commit($message, false);
-                }
+                $success = $this->isMaxAttemptReached($message, $attempts);
                 $attempts++;
             }
         } while (!$success);
+    }
+
+    private function isMaxAttemptReached(\RdKafka\Message $message, int $attempts): bool
+    {
+        if (
+            $this->config->getMaxAttempts()->hasMaxAttempts() &&
+            $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)
+        ) {
+            $this->commit($message, false);
+            return true;
+        }
+
+        $this->config->getSleep()->waiting();
+
+        return false;
     }
 
     private function sendToDql(\RdKafka\Message $message): void
@@ -96,7 +104,7 @@ class Consumer
         $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message->payload);
     }
 
-    private function commit(\RdKafka\Message $message, bool $success = true): void
+    private function commit(\RdKafka\Message $message, bool $success): void
     {
         if (!$success && !is_null($this->config->getDlq())) {
             $this->sendToDql($message);

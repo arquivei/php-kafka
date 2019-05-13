@@ -5,12 +5,14 @@ namespace Kafka\Consumer\Entities;
 use Kafka\Consumer\Contracts\Consumer;
 use Kafka\Consumer\Entities\Config\Sasl;
 use Kafka\Consumer\Entities\Config\MaxAttempt;
+use Kafka\Consumer\Entities\Config\Sleep;
 
 class Config
 {
     private $dlq;
     private $sasl;
     private $topic;
+    private $sleep;
     private $broker;
     private $commit;
     private $groupId;
@@ -27,11 +29,13 @@ class Config
         Consumer $consumer,
         MaxAttempt $maxAttempts,
         string $securityProtocol,
-        ?string $dlq
+        ?string $dlq,
+        Sleep $sleep
     ) {
         $this->dlq = $dlq;
         $this->sasl = $sasl;
         $this->topic = $topic;
+        $this->sleep = $sleep;
         $this->broker = $broker;
         $this->commit = $commit;
         $this->groupId = $groupId;
@@ -88,5 +92,10 @@ class Config
     public function getDlq(): ?string
     {
         return $this->dlq;
+    }
+
+    public function getSleep(): Sleep
+    {
+        return $this->sleep;
     }
 }

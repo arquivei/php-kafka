@@ -4,17 +4,19 @@ namespace Kafka\Consumer\Laravel\Console\Commands;
 
 use Illuminate\Console\Command;
 use Kafka\Consumer\Contracts\Consumer;
+use Kafka\Consumer\Entities\Config\Sleep;
 use Kafka\Consumer\Exceptions\InvalidCommitException;
 use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=} {--sleep=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
     private $dlq;
     private $topic;
+    private $sleep;
     private $config;
     private $groupId;
     private $maxAttempt;
@@ -34,6 +36,7 @@ class PhpKafkaConsumerCommand extends Command
 
         $this->dlq = $this->option('dlq');
         $this->topic = $this->option('topic');
+        $this->sleep = (int)$this->option('sleep');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
 
@@ -51,7 +54,8 @@ class PhpKafkaConsumerCommand extends Command
             new $consumer(),
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
             $this->config['securityProtocol'],
-            $this->getDlq()
+            $this->getDlq(),
+            new Sleep($this->getSleepTime())
         );
 
         (new \Kafka\Consumer\Consumer($config))->consume();
@@ -75,6 +79,11 @@ class PhpKafkaConsumerCommand extends Command
     private function getDlq(): ?string
     {
         return (is_string($this->dlq) && strlen($this->dlq) > 1) ? $this->dlq : null;
+    }
+
+    private function getSleepTime(): ?int
+    {
+        return (is_int($this->sleep) && $this->sleep >= 1) ? $this->sleep : null;
     }
 
     private function validateCommit(?int $commit): void
