@@ -24,7 +24,7 @@ class Consumer
     {
         $this->consumer = new \RdKafka\KafkaConsumer($this->setConf());
         $this->producer = new \RdKafka\Producer($this->setConf());
-        $this->consumer->subscribe([$this->config->getTopic()]);
+        $this->consumer->subscribe($this->config->getTopics());
 
         $this->commits = 0;
         while (true) {
@@ -52,6 +52,7 @@ class Consumer
 
         $conf = new \RdKafka\Conf();
         $conf->set('enable.auto.commit', 'false');
+        $conf->set('compression.codec', 'gzip');
         $conf->set('group.id', $this->config->getGroupId());
         $conf->set('bootstrap.servers', $this->config->getBroker());
         $conf->set('security.protocol', $this->config->getSecurityProtocol());
@@ -101,7 +102,7 @@ class Consumer
     private function sendToDql(\RdKafka\Message $message): void
     {
         $topic = $this->producer->newTopic($this->config->getDlq());
-        $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message->payload);
+        $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message->payload, $this->config->getConsumer()->producerKey($message->payload));
     }
 
     private function commit(\RdKafka\Message $message, bool $success): void

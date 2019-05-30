@@ -10,12 +10,12 @@ use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=} {--sleep=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=*} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=} {--sleep=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
     private $dlq;
-    private $topic;
+    private $topics;
     private $sleep;
     private $config;
     private $groupId;
@@ -30,16 +30,15 @@ class PhpKafkaConsumerCommand extends Command
     public function handle()
     {
         $consumer = $this->option('consumer');
-        $commmit = $this->option('commit');
+        $commit = $this->option('commit');
         $this->validateConsumer($consumer);
-        $this->validateCommit($commmit);
+        $this->validateCommit($commit);
 
         $this->dlq = $this->option('dlq');
-        $this->topic = $this->option('topic');
+        $this->topics = $this->option('topic');
         $this->sleep = (int)$this->option('sleep');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
-
 
         $config = new \Kafka\Consumer\Entities\Config(
             new \Kafka\Consumer\Entities\Config\Sasl(
@@ -47,9 +46,9 @@ class PhpKafkaConsumerCommand extends Command
                 $this->config['sasl']['password'],
                 $this->config['sasl']['mechanisms']
             ),
-            $this->getTopic(),
+            $this->getTopics(),
             $this->config['broker'],
-            $commmit,
+            $commit,
             $this->getGroupId(),
             new $consumer(),
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
@@ -61,9 +60,9 @@ class PhpKafkaConsumerCommand extends Command
         (new \Kafka\Consumer\Consumer($config))->consume();
     }
 
-    private function getTopic(): string
+    private function getTopics(): array
     {
-        return (is_string($this->topic) && strlen($this->topic) > 1) ? $this->topic : $this->config['topic'];
+        return (is_array($this->topics) && !empty($this->topics)) ? $this->topics : [];
     }
 
     private function getGroupId(): string
