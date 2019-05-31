@@ -11,7 +11,7 @@ class Config
 {
     private $dlq;
     private $sasl;
-    private $topic;
+    private $topics;
     private $sleep;
     private $broker;
     private $commit;
@@ -22,7 +22,7 @@ class Config
 
     public function __construct(
         Sasl $sasl,
-        string $topic,
+        array $topics,
         string $broker,
         int $commit,
         string $groupId,
@@ -34,7 +34,7 @@ class Config
     ) {
         $this->dlq = $dlq;
         $this->sasl = $sasl;
-        $this->topic = $topic;
+        $this->topics = $topics;
         $this->sleep = $sleep;
         $this->broker = $broker;
         $this->commit = $commit;
@@ -49,9 +49,9 @@ class Config
         return $this->sasl;
     }
 
-    public function getTopic(): string
+    public function getTopics(): array
     {
-        return $this->topic;
+        return $this->topics;
     }
 
     public function getBroker(): string
