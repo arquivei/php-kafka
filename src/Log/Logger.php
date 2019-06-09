@@ -21,12 +21,11 @@ class Logger
         });
     }
 
-    public function error(?int $messageId, int $attempts, \Throwable $exception): void
+    public function error(?int $messageId, \Throwable $exception): void
     {
         $this->logger->error('Error to consume message', [
             'message_id' => $messageId,
-            'throwable' => $exception,
-            'attempt' => $attempts,
+            'throwable' => $exception
         ]);
     }
 }

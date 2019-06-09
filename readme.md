@@ -10,7 +10,8 @@ A consumer of Kafka in PHP
     $ cd /tmp
     $ mkdir librdkafka
     $ cd librdkafka
-    $ git clone https://github.com/edenhill/librdkafka.git .
+    $ curl -L https://github.com/edenhill/librdkafka/archive/v1.0.0.tar.gz | tar xz
+    $ cd librdkafka-1.0.0
     $ ./configure
     $ make
     $ make install

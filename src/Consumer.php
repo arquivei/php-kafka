@@ -42,7 +42,6 @@ class Consumer
                 default:
                     // ERROR
                     throw new KafkaConsumerException($message->errstr());
-                    break;
             }
         } while (!$this->isMaxMessage());
     }
@@ -72,34 +71,32 @@ class Consumer
 
     private function executeMessage(\RdKafka\Message $message): void
     {
-        $attempts = 1;
-        do {
-            try {
-                $this->config->getConsumer()->handle($message->payload);
-                $success = true;
-                $this->commit($message, true);
-            } catch (\Throwable $exception) {
-                $this->logger->error($message->offset, $attempts, $exception);
-
-                $success = $this->isMaxAttemptReached($message, $attempts);
-                $attempts++;
-            }
-        } while (!$success);
-    }
-
-    private function isMaxAttemptReached(\RdKafka\Message $message, int $attempts): bool
-    {
-        if (
-            $this->config->getMaxAttempts()->hasMaxAttempts() &&
-            $this->config->getMaxAttempts()->hasReachedMaxAttempts($attempts)
-        ) {
-            $this->commit($message, false);
-            return true;
+        try {
+            $this->config->getConsumer()->handle($message->payload);
+            $success = true;
+        } catch (\Throwable $throwable) {
+            $this->logger->error($message->offset, $throwable);
+            $success = $this->handleException($throwable, $message);
         }
 
-        $this->config->getSleep()->waiting();
+        $this->commit($message, $success);
+    }
 
-        return false;
+    private function handleException(
+        \Throwable $exception,
+        \RdKafka\Message $message
+    ): bool {
+        try {
+            $this->config->getConsumer()->failed(
+                $message->payload,
+                $this->config->getTopics()[0],
+                $exception
+            );
+            return true;
+        } catch (\Throwable $throwable) {
+            $this->logger->error($message->offset, $throwable);
+            return false;
+        }
     }
 
     private function sendToDql(\RdKafka\Message $message): void

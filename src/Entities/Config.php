@@ -4,20 +4,16 @@ namespace Kafka\Consumer\Entities;
 
 use Kafka\Consumer\Contracts\Consumer;
 use Kafka\Consumer\Entities\Config\Sasl;
-use Kafka\Consumer\Entities\Config\MaxAttempt;
-use Kafka\Consumer\Entities\Config\Sleep;
 
 class Config
 {
     private $dlq;
     private $sasl;
     private $topics;
-    private $sleep;
     private $broker;
     private $commit;
     private $groupId;
     private $consumer;
-    private $maxAttempts;
     private $maxMessages;
     private $securityProtocol;
 
@@ -28,21 +24,17 @@ class Config
         int $commit,
         string $groupId,
         Consumer $consumer,
-        MaxAttempt $maxAttempts,
         string $securityProtocol,
         ?string $dlq,
-        Sleep $sleep,
         int $maxMessages = -1
     ) {
         $this->dlq = $dlq;
         $this->sasl = $sasl;
         $this->topics = $topics;
-        $this->sleep = $sleep;
         $this->broker = $broker;
         $this->commit = $commit;
         $this->groupId = $groupId;
         $this->consumer = $consumer;
-        $this->maxAttempts = $maxAttempts;
         $this->maxMessages = $maxMessages;
         $this->securityProtocol = $securityProtocol;
     }
@@ -77,11 +69,6 @@ class Config
         return $this->consumer;
     }
 
-    public function getMaxAttempts(): MaxAttempt
-    {
-        return $this->maxAttempts;
-    }
-
     public function getSecurityProtocol(): string
     {
         return $this->securityProtocol;
@@ -95,11 +82,6 @@ class Config
     public function getDlq(): ?string
     {
         return $this->dlq;
-    }
-
-    public function getSleep(): Sleep
-    {
-        return $this->sleep;
     }
 
     public function getMaxMessages(): int

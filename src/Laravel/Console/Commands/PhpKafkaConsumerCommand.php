@@ -4,22 +4,18 @@ namespace Kafka\Consumer\Laravel\Console\Commands;
 
 use Illuminate\Console\Command;
 use Kafka\Consumer\Contracts\Consumer;
-use Kafka\Consumer\Entities\Config\Sleep;
 use Kafka\Consumer\Exceptions\InvalidCommitException;
 use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=*} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=} {--sleep=} {--maxMessage=}';
-
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=*} {--consumer=} {--groupId=} {--commit=} {--dlq=} {--maxMessage=}';
     protected $description = 'A consumer of Kafka in PHP';
 
     private $dlq;
     private $topics;
-    private $sleep;
     private $config;
     private $groupId;
-    private $maxAttempt;
     private $maxMessage;
 
     public function __construct()
@@ -37,9 +33,7 @@ class PhpKafkaConsumerCommand extends Command
 
         $this->dlq = $this->option('dlq');
         $this->topics = $this->option('topic');
-        $this->sleep = (int)$this->option('sleep');
         $this->groupId = $this->option('groupId');
-        $this->maxAttempt = (int)$this->option('maxAttempt');
         $this->maxMessage = (int)$this->option('maxMessage');
 
         $config = new \Kafka\Consumer\Entities\Config(
@@ -53,10 +47,8 @@ class PhpKafkaConsumerCommand extends Command
             $commit,
             $this->getGroupId(),
             new $consumer(),
-            new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
             $this->config['securityProtocol'],
             $this->getDlq(),
-            new Sleep($this->getSleepTime()),
             $this->getMaxMessage()
         );
 
@@ -73,11 +65,6 @@ class PhpKafkaConsumerCommand extends Command
         return (is_string($this->groupId) && strlen($this->groupId) > 1) ? $this->groupId : $this->config['groupId'];
     }
 
-    private function getMaxAttempt(): ?int
-    {
-        return (is_int($this->maxAttempt) && $this->maxAttempt >= 1) ? $this->maxAttempt : null;
-    }
-
     private function getMaxMessage(): int
     {
         return (is_int($this->maxMessage) && $this->maxMessage >= 1) ? $this->maxMessage : -1;
@@ -86,11 +73,6 @@ class PhpKafkaConsumerCommand extends Command
     private function getDlq(): ?string
     {
         return (is_string($this->dlq) && strlen($this->dlq) > 1) ? $this->dlq : null;
-    }
-
-    private function getSleepTime(): ?int
-    {
-        return (is_int($this->sleep) && $this->sleep >= 1) ? $this->sleep : null;
     }
 
     private function validateCommit(?int $commit): void
