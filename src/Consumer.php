@@ -53,6 +53,7 @@ class Consumer
         $conf = new \RdKafka\Conf();
         $conf->set('enable.auto.commit', 'false');
         $conf->set('compression.codec', 'gzip');
+        $conf->set('max.poll.interval.ms', '86400000');
         $conf->set('group.id', $this->config->getGroupId());
         $conf->set('bootstrap.servers', $this->config->getBroker());
         $conf->set('security.protocol', $this->config->getSecurityProtocol());
