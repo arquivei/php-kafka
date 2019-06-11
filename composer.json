@@ -10,6 +10,7 @@
   "type": "project",
   "require": {
     "php": "^7.1.3",
+    "monolog/monolog": "^1.24",
     "illuminate/console": "5.*"
   },
   "require-dev": {
