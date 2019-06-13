@@ -18,6 +18,7 @@ class Config
     private $groupId;
     private $consumer;
     private $maxAttempts;
+    private $maxMessages;
     private $securityProtocol;
 
     public function __construct(
@@ -30,7 +31,8 @@ class Config
         MaxAttempt $maxAttempts,
         string $securityProtocol,
         ?string $dlq,
-        Sleep $sleep
+        Sleep $sleep,
+        int $maxMessages = -1
     ) {
         $this->dlq = $dlq;
         $this->sasl = $sasl;
@@ -41,6 +43,7 @@ class Config
         $this->groupId = $groupId;
         $this->consumer = $consumer;
         $this->maxAttempts = $maxAttempts;
+        $this->maxMessages = $maxMessages;
         $this->securityProtocol = $securityProtocol;
     }
 
@@ -97,5 +100,10 @@ class Config
     public function getSleep(): Sleep
     {
         return $this->sleep;
+    }
+
+    public function getMaxMessages(): int
+    {
+        return $this->maxMessages;
     }
 }

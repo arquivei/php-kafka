@@ -10,7 +10,7 @@ use Kafka\Consumer\Exceptions\InvalidConsumerException;
 
 class PhpKafkaConsumerCommand extends Command
 {
-    protected $signature = 'arquivei:php-kafka-consumer {--topic=*} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=} {--sleep=}';
+    protected $signature = 'arquivei:php-kafka-consumer {--topic=*} {--consumer=} {--groupId=} {--maxAttempt=} {--commit=} {--dlq=} {--sleep=} {--maxMessage=}';
 
     protected $description = 'A consumer of Kafka in PHP';
 
@@ -20,6 +20,7 @@ class PhpKafkaConsumerCommand extends Command
     private $config;
     private $groupId;
     private $maxAttempt;
+    private $maxMessage;
 
     public function __construct()
     {
@@ -39,6 +40,7 @@ class PhpKafkaConsumerCommand extends Command
         $this->sleep = (int)$this->option('sleep');
         $this->groupId = $this->option('groupId');
         $this->maxAttempt = (int)$this->option('maxAttempt');
+        $this->maxMessage = (int)$this->option('maxMessage');
 
         $config = new \Kafka\Consumer\Entities\Config(
             new \Kafka\Consumer\Entities\Config\Sasl(
@@ -54,7 +56,8 @@ class PhpKafkaConsumerCommand extends Command
             new \Kafka\Consumer\Entities\Config\MaxAttempt($this->getMaxAttempt()),
             $this->config['securityProtocol'],
             $this->getDlq(),
-            new Sleep($this->getSleepTime())
+            new Sleep($this->getSleepTime()),
+            $this->getMaxMessage()
         );
 
         (new \Kafka\Consumer\Consumer($config))->consume();
@@ -73,6 +76,11 @@ class PhpKafkaConsumerCommand extends Command
     private function getMaxAttempt(): ?int
     {
         return (is_int($this->maxAttempt) && $this->maxAttempt >= 1) ? $this->maxAttempt : null;
+    }
+
+    private function getMaxMessage(): int
+    {
+        return (is_int($this->maxMessage) && $this->maxMessage >= 1) ? $this->maxMessage : -1;
     }
 
     private function getDlq(): ?string

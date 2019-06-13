@@ -13,6 +13,7 @@ class Consumer
     private $commits;
     private $consumer;
     private $producer;
+    private $messageNumber = 0;
 
     public function __construct(Config $config)
     {
@@ -27,10 +28,11 @@ class Consumer
         $this->consumer->subscribe($this->config->getTopics());
 
         $this->commits = 0;
-        while (true) {
+        do {
             $message = $this->consumer->consume(500);
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    $this->messageNumber++;
                     $this->executeMessage($message);
                     break;
                 case RD_KAFKA_RESP_ERR__PARTITION_EOF:
@@ -42,7 +44,7 @@ class Consumer
                     throw new KafkaConsumerException($message->errstr());
                     break;
             }
-        }
+        } while (!$this->isMaxMessage());
     }
 
     private function setConf(): \RdKafka\Conf
@@ -116,10 +118,15 @@ class Consumer
         }
 
         $this->commits++;
-        if ($this->commits >= $this->config->getCommit()) {
+        if ($this->isMaxMessage() || $this->commits >= $this->config->getCommit()) {
             $this->consumer->commit();
             $this->commits = 0;
             return;
         }
+    }
+
+    private function isMaxMessage(): bool
+    {
+        return $this->messageNumber == $this->config->getMaxMessages();
     }
 }
