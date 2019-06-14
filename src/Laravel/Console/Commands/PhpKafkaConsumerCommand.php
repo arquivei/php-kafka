@@ -84,7 +84,7 @@ class PhpKafkaConsumerCommand extends Command
 
     private function validateConsumer(?string $consumer): void
     {
-        if (!class_exists($consumer) || !in_array(Consumer::class, class_implements($consumer))) {
+        if (! class_exists($consumer) || !is_subclass_of($consumer, Consumer::class)) {
             throw new InvalidConsumerException();
         }
     }

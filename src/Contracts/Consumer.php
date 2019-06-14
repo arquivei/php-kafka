@@ -2,9 +2,17 @@
 
 namespace Kafka\Consumer\Contracts;
 
-interface Consumer
+abstract class Consumer
 {
-    public function handle(string $message): void;
-    public function failed(string $message, string $queue, \Throwable $exception): void;
-    public function producerKey(string $message): ?string;
+    public abstract function handle(string $message): void;
+
+    public function failed(string $message, string $topic, \Throwable $exception): void
+    {
+        throw $exception;
+    }
+
+    public function producerKey(string $message): ?string
+    {
+        return null;
+    }
 }
