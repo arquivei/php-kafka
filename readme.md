@@ -43,7 +43,7 @@ use Kafka\Consumer\Contracts\Consumer;
 use Kafka\Consumer\Entities\Config\Sasl;
 use Kafka\Consumer\Entities\Config\MaxAttempt;
 
-class DefaultConsumer implements Consumer
+class DefaultConsumer extends Consumer
 {
     public function handle(string $message): void
     {
