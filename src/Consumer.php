@@ -29,7 +29,7 @@ class Consumer
 
         $this->commits = 0;
         do {
-            $message = $this->consumer->consume(500);
+            $message = $this->consumer->consume(120000);
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
                     $this->messageNumber++;
@@ -94,7 +94,9 @@ class Consumer
             );
             return true;
         } catch (\Throwable $throwable) {
-            $this->logger->error($message->offset, $throwable);
+            if ($exception !== $throwable){
+                $this->logger->error($message->offset, $throwable, 'HANDLER_EXCEPTION');
+            }
             return false;
         }
     }

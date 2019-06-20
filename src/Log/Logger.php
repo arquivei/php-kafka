@@ -21,9 +21,9 @@ class Logger
         });
     }
 
-    public function error(?int $messageId, \Throwable $exception): void
+    public function error(?int $messageId, \Throwable $exception, string $prefix = 'ERROR'): void
     {
-        $this->logger->error('Error to consume message', [
+        $this->logger->error("[$prefix] Error to consume message", [
             'message_id' => $messageId,
             'throwable' => $exception
         ]);
