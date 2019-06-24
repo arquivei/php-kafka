@@ -3,6 +3,7 @@
 namespace Kafka\Consumer\Log;
 
 use Monolog\Handler\StreamHandler;
+use Monolog\Processor\UidProcessor;
 use Monolog\Formatter\JsonFormatter;
 
 class Logger
@@ -12,7 +13,8 @@ class Logger
     public function __construct()
     {
         $handler = new StreamHandler("php://stdout");
-        $handler->setFormatter(new JsonFormatter());
+        $handler->setFormatter(new JsonFormatter())
+            ->pushProcessor(new UidProcessor(32));
         $this->logger = new \Monolog\Logger('PHP-KAFKA-CONSUMER-ERROR');
         $this->logger->pushHandler($handler);
         $this->logger->pushProcessor(function ($record) {
@@ -21,10 +23,10 @@ class Logger
         });
     }
 
-    public function error(?int $messageId, \Throwable $exception, string $prefix = 'ERROR'): void
+    public function error(\RdKafka\Message $message, \Throwable $exception = null, string $prefix = 'ERROR'): void
     {
         $this->logger->error("[$prefix] Error to consume message", [
-            'message_id' => $messageId,
+            'message' => $message,
             'throwable' => $exception
         ]);
     }

@@ -41,6 +41,7 @@ class Consumer
                     break;
                 default:
                     // ERROR
+                    $this->logger->error($message, null, 'CONSUMER');
                     throw new KafkaConsumerException($message->errstr());
             }
         } while (!$this->isMaxMessage());
@@ -75,7 +76,7 @@ class Consumer
             $this->config->getConsumer()->handle($message->payload);
             $success = true;
         } catch (\Throwable $throwable) {
-            $this->logger->error($message->offset, $throwable);
+            $this->logger->error($message, $throwable);
             $success = $this->handleException($throwable, $message);
         }
 
@@ -94,8 +95,8 @@ class Consumer
             );
             return true;
         } catch (\Throwable $throwable) {
-            if ($exception !== $throwable){
-                $this->logger->error($message->offset, $throwable, 'HANDLER_EXCEPTION');
+            if ($exception !== $throwable) {
+                $this->logger->error($message, $throwable, 'HANDLER_EXCEPTION');
             }
             return false;
         }
@@ -104,23 +105,33 @@ class Consumer
     private function sendToDql(\RdKafka\Message $message): void
     {
         $topic = $this->producer->newTopic($this->config->getDlq());
-        $topic->produce(RD_KAFKA_PARTITION_UA, 0, $message->payload, $this->config->getConsumer()->producerKey($message->payload));
+        $topic->produce(
+            RD_KAFKA_PARTITION_UA,
+            0,
+            $message->payload,
+            $this->config->getConsumer()->producerKey($message->payload)
+        );
     }
 
     private function commit(\RdKafka\Message $message, bool $success): void
     {
-        if (!$success && !is_null($this->config->getDlq())) {
-            $this->sendToDql($message);
-            $this->consumer->commit();
-            $this->commits = 0;
-            return;
-        }
+        try {
+            if (!$success && !is_null($this->config->getDlq())) {
+                $this->sendToDql($message);
+                $this->consumer->commit();
+                $this->commits = 0;
+                return;
+            }
 
-        $this->commits++;
-        if ($this->isMaxMessage() || $this->commits >= $this->config->getCommit()) {
-            $this->consumer->commit();
-            $this->commits = 0;
-            return;
+            $this->commits++;
+            if ($this->isMaxMessage() || $this->commits >= $this->config->getCommit()) {
+                $this->consumer->commit();
+                $this->commits = 0;
+                return;
+            }
+        } catch (\Throwable $throwable) {
+            $this->logger->error($message, $throwable, 'MESSAGE_COMMIT');
+            throw $throwable;
         }
     }
 
