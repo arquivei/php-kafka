@@ -118,20 +118,22 @@ class Consumer
         try {
             if (!$success && !is_null($this->config->getDlq())) {
                 $this->sendToDql($message);
-                $this->consumer->commit();
                 $this->commits = 0;
+                $this->consumer->commit();
                 return;
             }
 
             $this->commits++;
             if ($this->isMaxMessage() || $this->commits >= $this->config->getCommit()) {
-                $this->consumer->commit();
                 $this->commits = 0;
+                $this->consumer->commit();
                 return;
             }
         } catch (\Throwable $throwable) {
             $this->logger->error($message, $throwable, 'MESSAGE_COMMIT');
-            throw $throwable;
+            if ($throwable->getCode() != RD_KAFKA_RESP_ERR__NO_OFFSET){
+                throw $throwable;
+            }
         }
     }
 
