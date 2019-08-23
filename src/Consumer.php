@@ -53,6 +53,7 @@ class Consumer
         $topicConf->set('auto.offset.reset', 'smallest');
 
         $conf = new \RdKafka\Conf();
+        $conf->set('queued.max.messages.kbytes', '10000');
         $conf->set('enable.auto.commit', 'false');
         $conf->set('compression.codec', 'gzip');
         $conf->set('max.poll.interval.ms', '86400000');
