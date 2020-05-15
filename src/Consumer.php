@@ -2,18 +2,23 @@
 
 namespace Kafka\Consumer;
 
+use RdKafka\Conf;
+use RdKafka\Message;
+use RdKafka\Producer;
+use RdKafka\TopicConf;
+use RdKafka\KafkaConsumer;
 use Kafka\Consumer\Log\Logger;
 use Kafka\Consumer\Entities\Config;
 use Kafka\Consumer\Exceptions\KafkaConsumerException;
 
 class Consumer
 {
-    private $config;
-    private $logger;
-    private $commits;
-    private $consumer;
-    private $producer;
-    private $messageNumber = 0;
+    private Config $config;
+    private Logger $logger;
+    private int $commits;
+    private KafkaConsumer $consumer;
+    private Producer $producer;
+    private int $messageNumber = 0;
 
     public function __construct(Config $config)
     {
@@ -23,8 +28,8 @@ class Consumer
 
     public function consume(): void
     {
-        $this->consumer = new \RdKafka\KafkaConsumer($this->setConf());
-        $this->producer = new \RdKafka\Producer($this->setConf());
+        $this->consumer = new KafkaConsumer($this->setConf());
+        $this->producer = new Producer($this->setConf());
         $this->consumer->subscribe($this->config->getTopics());
 
         $this->commits = 0;
@@ -47,12 +52,12 @@ class Consumer
         } while (!$this->isMaxMessage());
     }
 
-    private function setConf(): \RdKafka\Conf
+    private function setConf(): Conf
     {
-        $topicConf = new \RdKafka\TopicConf();
+        $topicConf = new TopicConf();
         $topicConf->set('auto.offset.reset', 'smallest');
 
-        $conf = new \RdKafka\Conf();
+        $conf = new Conf();
         $conf->set('queued.max.messages.kbytes', '10000');
         $conf->set('enable.auto.commit', 'false');
         $conf->set('compression.codec', 'gzip');
@@ -71,7 +76,7 @@ class Consumer
         return $conf;
     }
 
-    private function executeMessage(\RdKafka\Message $message): void
+    private function executeMessage(Message $message): void
     {
         try {
             $this->config->getConsumer()->handle($message->payload);
@@ -86,7 +91,7 @@ class Consumer
 
     private function handleException(
         \Throwable $exception,
-        \RdKafka\Message $message
+        Message $message
     ): bool {
         try {
             $this->config->getConsumer()->failed(
@@ -103,7 +108,7 @@ class Consumer
         }
     }
 
-    private function sendToDql(\RdKafka\Message $message): void
+    private function sendToDql(Message $message): void
     {
         $topic = $this->producer->newTopic($this->config->getDlq());
         $topic->produce(
@@ -114,7 +119,7 @@ class Consumer
         );
     }
 
-    private function commit(\RdKafka\Message $message, bool $success): void
+    private function commit(Message $message, bool $success): void
     {
         try {
             if (!$success && !is_null($this->config->getDlq())) {

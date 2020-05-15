@@ -5,10 +5,11 @@ namespace Kafka\Consumer\Log;
 use Monolog\Handler\StreamHandler;
 use Monolog\Processor\UidProcessor;
 use Monolog\Formatter\JsonFormatter;
+use RdKafka\Message;
 
 class Logger
 {
-    private $logger;
+    private \Monolog\Logger $logger;
 
     public function __construct()
     {
@@ -23,7 +24,7 @@ class Logger
         });
     }
 
-    public function error(\RdKafka\Message $message, \Throwable $exception = null, string $prefix = 'ERROR'): void
+    public function error(Message $message, \Throwable $exception = null, string $prefix = 'ERROR'): void
     {
         $this->logger->error("[$prefix] Error to consume message", [
             'message' => $message,
