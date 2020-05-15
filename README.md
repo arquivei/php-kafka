@@ -1,6 +1,13 @@
 # PHP KAFKA CONSUMER
 
-A consumer of Kafka in PHP
+A PHP client for Apache Kafka
+
+## Requirements
+
++ PHP 7.4
++ librdkafka
++ rdkafka
+
 
 ## Install
 
