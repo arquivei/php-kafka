@@ -1,6 +1,6 @@
 <?php
 
-namespace Kafka\Consumer\Exceptions;
+namespace PHP\Kafka\Exceptions;
 
 use Throwable;
 

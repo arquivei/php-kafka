@@ -1,18 +1,17 @@
 <?php
 
-namespace Kafka\Consumer\Contracts;
+namespace PHP\Kafka\Contracts;
+
+use Throwable;
+use RdKafka\Message;
+use PHP\Kafka\FailHandler\FailHandler;
 
 abstract class Consumer
 {
-    public abstract function handle(string $message): void;
+    public abstract function handle(Message $message): void;
 
-    public function failed(string $message, string $topic, \Throwable $exception): void
+    public function failed(Message $message, FailHandler $failHandler, Throwable $cause): void
     {
-        throw $exception;
-    }
-
-    public function producerKey(string $message): ?string
-    {
-        return null;
+        $failHandler->handle($cause, $message);
     }
 }
