@@ -2,15 +2,15 @@
 
 namespace PHP\Kafka;
 
-use PHP\Kafka\Exceptions\DontCommitException;
 use Throwable;
 use RdKafka\Message;
 use RdKafka\KafkaConsumer;
 use Psr\Log\LoggerInterface;
 use PHP\Kafka\Config\Configuration;
 use PHP\Kafka\FailHandler\FailHandler;
-use PHP\Kafka\FailHandler\CommitAlwaysFailHandler;
 use PHP\Kafka\Exceptions\KafkaConsumerException;
+use PHP\Kafka\Exceptions\InvalidConsumerException;
+use PHP\Kafka\FailHandler\CommitAlwaysFailHandler;
 
 class Consumer
 {
@@ -36,9 +36,14 @@ class Consumer
     public function consume(): void
     {
         $this->commits = 0;
-        $this->kafka->subscribe($this->config->getConsumerConfig()->getTopics());
+        $consumerConfiguration = $this->config->getConsumerConfig();
+        if(is_null($consumerConfiguration)) {
+            throw new InvalidConsumerException();
+        }
+
+        $this->kafka->subscribe($consumerConfiguration->getTopics());
         do {
-            $message = $this->kafka->consume($this->config->getConsumerConfig()->getTimeoutMs());
+            $message = $this->kafka->consume($consumerConfiguration->getTimeoutMs());
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
                     $this->messageNumber++;
@@ -49,10 +54,6 @@ class Consumer
                     // NO MESSAGE
                     break;
                 default:
-                    // ERROR
-                    $this->logger->error('Unmapped Error while consuming from Kafka',
-                        $this->messageToArray($message)
-                    );
                     throw new KafkaConsumerException($message->errstr());
             }
         } while (!$this->isMaxMessage());
@@ -61,16 +62,15 @@ class Consumer
     private function handle(Message $message): void
     {
         try {
-            $this->config->getConsumerConfig()->getConsumer()->handle($message);
+            $consumerConfiguration = $this->config->getConsumerConfig();
+            if(is_null($consumerConfiguration)) {
+               throw new InvalidConsumerException();
+            }
+
+            $consumer = $consumerConfiguration->getConsumer();
+            $consumer->handle($message);
             $this->commit($message);
         } catch (Throwable $throwable) {
-            $this->logger->error('Error while handling message',
-                [
-                    'consumer' => get_class($this->config->getConsumerConfig()->getConsumer()),
-                    'message' => $this->messageToArray($message),
-                    'exception' => $throwable,
-                ]
-            );
             $this->handleException($throwable, $message);
         }
     }
@@ -81,13 +81,6 @@ class Consumer
             $this->config->getConsumerConfig()->getConsumer()->failed($message, $this->failHandler, $cause);
             $this->commit($message);
         } catch (Throwable $exception) {
-            $this->logger->error('Error while handling exception',
-                [
-                    'consumer' => get_class($this->config->getConsumerConfig()->getConsumer()),
-                    'failHandler' => get_class($this->failHandler),
-                    'exception' => $exception,
-                ]
-            );
             throw $exception;
         }
     }
@@ -102,12 +95,6 @@ class Consumer
                 return;
             }
         } catch (Throwable $throwable) {
-            $this->logger->error("Error while commit message",
-                [
-                    'exception' => $throwable,
-                    'message' => $message,
-                ]
-            );
             if ($throwable->getCode() != RD_KAFKA_RESP_ERR__NO_OFFSET) {
                 throw $throwable;
             }
@@ -117,25 +104,5 @@ class Consumer
     private function isMaxMessage(): bool
     {
         return $this->messageNumber == $this->config->getConsumerConfig()->getMaxMessages();
-    }
-
-    /**
-     * @param Message $message
-     * @return array
-     */
-    private function messageToArray(Message $message): array
-    {
-        return [
-            'message.err' => $message->err,
-            'message.payload' => $message->payload,
-            'message.topic_name' => $message->topic_name,
-            'message.key' => $message->key,
-            'message.headers' => $message->headers,
-            'message.len' => $message->len,
-            'message.offset' => $message->offset,
-            'message.partition' => $message->partition,
-            'message.timestamp' => $message->timestamp,
-            'message.error' => $message->errstr(),
-        ];
     }
 }
