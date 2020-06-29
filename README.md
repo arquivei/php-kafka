@@ -5,8 +5,8 @@ A PHP client for Apache Kafka
 ## Requirements
 
 + PHP 7.4
-+ librdkafka
-+ rdkafka
++ librdkafka 1.1.0
++ rdkafka 3.x
 
 
 ## Install
@@ -46,7 +46,7 @@ A PHP client for Apache Kafka
 require_once 'vendor/autoload.php';
 
 use Kafka\Consumer\Entities\Config;
-use Kafka\Consumer\Contracts\Consumer;
+use Kafka\Consumer\Contracts\ConsumerDLQ;
 use Kafka\Consumer\Entities\Config\Sasl;
 use Kafka\Consumer\Entities\Config\MaxAttempt;
 
@@ -67,41 +67,24 @@ $config = new Config(
     1,
     'php-kafka-consumer-group-id',
     new DefaultConsumer(),
-    new MaxAttempt(1),
     'security-protocol'
 );
 
-(new \Kafka\Consumer\Consumer($config))->consume();
+(new \PHP\Kafka\Consumer($config))->consume();
+
+
+
+$config = new Config(
+    new Sasl('username', 'pasword', 'mechanisms'),
+    'topic',
+    'broker:port',
+    1,
+    'php-kafka-consumer-group-id',
+    new DLDConsumer(),
+    new DLQ("parking-lot"),
+    'security-protocol'
+);
+
+(new \PHP\Kafka\Consumer($config))->consume();
 
 ```
-
-## Usage with Laravel
-
-You need to add the `php-kafka-consig.php` in `config` path:
-
-```php
-<?php
-
-return [
-    'topic' => 'topic',
-    'broker' => 'broker',
-    'groupId' => 'group-id',
-    'securityProtocol' => 'security-protocol',
-    'sasl' => [
-        'mechanisms' => 'mechanisms',
-        'username' => 'username',
-        'password' => 'password',
-    ],
-];
-
-```
-
-Use the command to execute the consumer:
-
-```bash
-$ php artisan arquivei:php-kafka-consumer --consumer="App\Consumers\YourConsumer" --commit=1
-```
-
-## TODO
-
-- Add unit tests

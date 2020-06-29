@@ -1,13 +1,14 @@
 <?php
 
+
 namespace PHP\Kafka\Exceptions;
 
 use Throwable;
 
-class KafkaConsumerException extends \Exception
+class DontCommitException extends \Exception
 {
     public function __construct(
-        string $message = 'Error consuming kafka topic',
+        string $message,
         int $code = 0,
         Throwable $previous = null
     ) {
