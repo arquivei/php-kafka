@@ -3,16 +3,15 @@
 namespace Tests;
 
 use Monolog\Logger;
-use PHP\Kafka\Config\ProducerConfiguration;
-use PHP\Kafka\FailHandler\DLQFailHandler;
 use RdKafka\Message;
 use PHP\Kafka\Consumer;
 use RdKafka\KafkaConsumer;
 use PHPUnit\Framework\TestCase;
 use PHP\Kafka\Config\Configuration;
+use PHP\Kafka\FailHandler\DLQFailHandler;
+use PHP\Kafka\Config\ProducerConfiguration;
 use PHP\Kafka\Config\ConsumerConfiguration;
 use PHP\Kafka\Exceptions\KafkaConsumerException;
-use PHP\Kafka\Exceptions\InvalidConsumerException;
 
 class ConsumerTest extends TestCase
 {
@@ -29,9 +28,9 @@ class ConsumerTest extends TestCase
     {
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic-test'],
-            1,
             'consumer-group-id-2',
             $this->consumerMock,
+            1,
             1,
             12000,
             []);
@@ -51,8 +50,9 @@ class ConsumerTest extends TestCase
         $this->kafkaConsumerMock->method('consume')->withAnyParameters()->willReturn($message);
 
         $this->consumerMock->expects($this->once())->method('handle')->with($this->equalTo($message));
+        $this->kafkaConsumerMock->expects($this->once())->method('commit');
 
-        $consumer = new Consumer($configuration, new Logger('test-logging'), $this->kafkaConsumerMock);
+        $consumer = new Consumer($configuration, new Logger('test-logging'), null, $this->kafkaConsumerMock);
         $consumer->consume();
     }
 
@@ -61,9 +61,9 @@ class ConsumerTest extends TestCase
         $this->expectException(KafkaConsumerException::class);
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic-test'],
-            1,
             'consumer-group-id-3',
             $this->consumerMock,
+            1,
             -1,
             12000,
             []);
@@ -81,12 +81,13 @@ class ConsumerTest extends TestCase
         $this->kafkaConsumerMock->method('consume')->withAnyParameters()->willReturn($errorMessage);
 
         $this->consumerMock->expects($this->never())->method('handle');
+        $this->kafkaConsumerMock->expects($this->never())->method('commit');
 
-        $consumer = new Consumer($configuration, new Logger('test-logging'), $this->kafkaConsumerMock);
+        $consumer = new Consumer($configuration, new Logger('test-logging'), null, $this->kafkaConsumerMock);
         $consumer->consume();
     }
 
-    public function testConsumeMessageDLQFailHandling(): void
+    public function testConsumeMessageHandlingErrorWhenFail(): void
     {
         $logger = new Logger('test-logging');
         $consumer = new class extends \PHP\Kafka\Contracts\Consumer
@@ -99,9 +100,9 @@ class ConsumerTest extends TestCase
 
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic-test'],
-            1,
             'consumer-group-id-4',
             $consumer,
+            1,
             1,
             12000,
             []);
@@ -121,11 +122,11 @@ class ConsumerTest extends TestCase
 
         $this->kafkaConsumerMock->method('subscribe')->withAnyParameters()->willReturnSelf();
         $this->kafkaConsumerMock->method('consume')->withAnyParameters()->willReturn($message);
+        $failHandlerMock = $this->createMock(DLQFailHandler::class);
 
+        $this->kafkaConsumerMock->expects($this->once())->method('commit');
 
-        $failHandler = new DLQFailHandler($logger, $configuration);
-
-        $consumer = new Consumer($configuration, $logger, $this->kafkaConsumerMock, $failHandler);
+        $consumer = new Consumer($configuration, $logger, $failHandlerMock, $this->kafkaConsumerMock);
         $consumer->consume();
     }
 }

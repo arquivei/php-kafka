@@ -18,10 +18,12 @@ class PhpKafkaLogger
         $handler->setFormatter(new JsonFormatter())->pushProcessor(new UidProcessor(32));
         $this->logger = new Logger($name);
         $this->logger->pushHandler($handler);
-        $this->logger->pushProcessor(function ($record) {
-            $record['datetime'] = $record['datetime']->format('c');
-            return $record;
-        });
+        $this->logger->pushProcessor(
+            function ($record) {
+                $record['datetime'] = $record['datetime']->format('c');
+                return $record;
+            }
+        );
     }
 
     /**

@@ -7,6 +7,7 @@ use RdKafka\Message;
 use Psr\Log\LoggerInterface;
 use PHP\Kafka\Config\Configuration;
 use RdKafka\Producer as KafkaProducer;
+use PHP\Kafka\Exceptions\DLQFailHandlerException;
 
 class DLQFailHandler implements FailHandler
 {
@@ -16,27 +17,33 @@ class DLQFailHandler implements FailHandler
 
     /**
      * DLQFailHandler constructor.
-     * @param LoggerInterface $logger
-     * @param Configuration $configs
+     *
+     * @param Configuration      $configs
+     * @param KafkaProducer|null $producer
      */
-    public function __construct(Configuration $configs, LoggerInterface $logger)
+    public function __construct(Configuration $configs, ?KafkaProducer $producer = null)
     {
-        $this->logger = $logger;
         $this->configs = $configs;
-        $this->producer = new KafkaProducer($configs->buildConfigs());
+        $this->producer = $producer ?? new KafkaProducer($configs->buildConfigs());
     }
 
+    /**
+     * @param  Throwable    $cause
+     * @param  Message|null $message
+     * @throws DLQFailHandlerException
+     */
     public function handle(Throwable $cause, ?Message $message): void
     {
         try {
             $this->sendToDql($message);
         } catch (Throwable $exception) {
-            $this->logger->error('Error while sending to DLQ',
-                [
-                    'consumer' => get_class($this->configs->getConsumerConfig()->getConsumer()),
-                    'exception' => $exception,
-                ]
+            $error = sprintf(
+                '%s. Consumer:%s',
+                'Error while sending to DLQ',
+                get_class($this->configs->getConsumerConfig()->getConsumer())
             );
+
+            throw new DLQFailHandlerException($error, $exception);
         }
     }
 
@@ -50,31 +57,8 @@ class DLQFailHandler implements FailHandler
             $message->key
         );
         $this->producer->poll(1000);
-        $this->logger->info('Message Sent to DLQ',
-            [
-                'message' => $message->payload,
-            ]
-        );
     }
 
-    /*private function buildConfs(): TopicConf
-    {
-        $topicConf = new TopicConf();
-        $producerConfiguration = $this->configs->getProducerConfig();
-        $dump = $this->configs->getConf()->dump();
-
-        foreach ($dump as $key => $value) {
-            $topicConf->set($key, $value);
-        }
-        $topicConf->set('enable.idempotence', 'true');
-        $topicConf->set('acks', $producerConfiguration->getAcks());
-
-        return $topicConf;
-    }*/
-
-    /**
-     * @return string
-     */
     private function buildDlqTopic(): string
     {
         $producerConfiguration = $this->configs->getProducerConfig();
