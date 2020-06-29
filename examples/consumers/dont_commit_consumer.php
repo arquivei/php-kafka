@@ -1,11 +1,10 @@
 <?php
 
-use PHP\Kafka\FailHandler\DontCommitFailHandler;
 use RdKafka\Message;
 use PHP\Kafka\Contracts\Consumer;
 use PHP\Kafka\Config\Configuration;
 use PHP\Kafka\Config\ConsumerConfiguration;
-use PHP\Kafka\Exceptions\KafkaConsumerException;
+use PHP\Kafka\FailHandler\DontCommitFailHandler;
 
 require '../../vendor/autoload.php';
 
@@ -17,16 +16,11 @@ class ThrowableConsumer extends Consumer {
     }
 }
 
-$topicOptions = [];
 $logger = (new PHP\Kafka\Log\PhpKafkaLogger('dont-commit-consumer'))->getLogger();
 $consumerConfiguration = new ConsumerConfiguration(
     ['simple-topic-example'],
-    1,
     'dont_commit_consumer',
-    new ThrowableConsumer(),
-    -1,
-    12000,
-    $topicOptions);
+    new ThrowableConsumer());
 
 $configuration = new Configuration('localhost:9092',
     null,

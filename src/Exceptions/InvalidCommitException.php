@@ -2,9 +2,10 @@
 
 namespace Kafka\Consumer\Exceptions;
 
+use Exception;
 use Throwable;
 
-class InvalidCommitException extends \Exception
+class InvalidCommitException extends Exception
 {
     public function __construct(
         $message = 'Invalid commit',
