@@ -9,14 +9,14 @@ class ProducerConfiguration
 
     /**
      * ProducerConfiguration constructor.
+     *
      * @param string $topic
      * @param string $acks
      */
     public function __construct(
         string $topic,
         string $acks = 'all'
-    )
-    {
+    ) {
         $this->acks = $acks;
         $this->topic = $topic;
     }

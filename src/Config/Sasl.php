@@ -4,6 +4,7 @@ namespace PHP\Kafka\Config;
 
 /**
  * Class Sasl
+ *
  * @package PHP\Kafka\Config
  *
  * Provide configuration for Simple Authentication and Security Layer.

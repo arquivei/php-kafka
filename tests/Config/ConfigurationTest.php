@@ -4,18 +4,27 @@ namespace Tests\Config;
 
 use PHP\Kafka\Config\Configuration;
 use PHP\Kafka\Config\ConsumerConfiguration;
+use PHP\Kafka\Contracts\Consumer;
 use PHPUnit\Framework\TestCase;
+use RdKafka\Message;
 
 class ConfigurationTest extends TestCase
 {
     public function testCreateDefaultConsumerConfiguration(): void
     {
+        $myConsumer = new class extends Consumer {
+
+            public function handle(Message $message): void
+            {
+            }
+        };
+
         $topicOptions = [];
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic'],
-            1,
             'my-group-id',
-            new MyConsumer(),
+            $myConsumer,
+            1,
             -1,
             120000,
             $topicOptions);

@@ -39,5 +39,17 @@
     "optimize-autoloader": true
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "scripts": {
+    "test": "phpunit tests/",
+    "phpstan": "phpstan analyse src/ -c phpstan.neon",
+    "cs": "phpcs --standard=psr12 -p src",
+    "cs-fix": "phpcbf src",
+    "build": [
+      "@composer install",
+      "@test",
+      "@cs",
+      "@phpstan"
+    ]
+  }
 }

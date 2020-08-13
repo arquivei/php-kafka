@@ -14,8 +14,9 @@ class Configuration
 
     /**
      * Configuration constructor.
-     * @param string $broker
-     * @param Sasl $sasl
+     *
+     * @param string                $broker
+     * @param Sasl                  $sasl
      * @param ProducerConfiguration $producerConf
      * @param ConsumerConfiguration $consumerConfig
      */
@@ -32,12 +33,41 @@ class Configuration
         $this->conf = new Conf();
     }
 
+    public function getConf(): Conf
+    {
+        return $this->conf;
+    }
+
+    /**
+     * @param array $options
+     * @return Conf
+     */
+    public function buildConfigs(array $options = []): Conf
+    {
+        $options = array_merge($this->defaultGlobalConfigs(), $options);
+
+        $this->buildGlobalConfigurations($options, $this->conf);
+        $this->buildSaslConfig($this->conf);
+        $this->buildConsumerConfig($this->conf);
+        $this->buildProducerConfig($this->conf);
+
+        return $this->conf;
+    }
+
     /**
      * @return string
      */
     public function getBroker(): string
     {
         return $this->broker;
+    }
+
+    /**
+     * @return Sasl|null
+     */
+    public function getSasl(): ?Sasl
+    {
+        return $this->sasl;
     }
 
     /**
@@ -56,29 +86,25 @@ class Configuration
         return $this->producerConf;
     }
 
-    /**
-     * @return Sasl|null
-     */
-    public function getSasl(): ?Sasl
+    private function defaultGlobalConfigs(): array
     {
-        return $this->sasl;
+        return [
+            'queued.max.messages.kbytes' => '10000',
+            'enable.auto.commit' => 'false',
+            'compression.codec' => 'gzip',
+            'max.poll.interval.ms' => '86400000',
+            'auto.offset.reset' => 'smallest',
+        ];
     }
 
-    public function getConf(): Conf
+    private function buildGlobalConfigurations(?array $options, Conf $conf): void
     {
-        return $this->conf;
-    }
-
-    public function buildConfigs(array $options = []): Conf
-    {
-        $options = array_merge($this->defaultGlobalConfigs(), $options);
-
-        $this->buildGlobalConfigurations($options, $this->conf);
-        $this->buildSaslConfig($this->conf);
-        $this->buildConsumerConfig($this->conf);
-        $this->buildProducerConfig($this->conf);
-
-        return $this->conf;
+        $conf->set('bootstrap.servers', $this->getBroker());
+        if (!is_null($options)) {
+            foreach ($options as $key => $value) {
+                $conf->set($key, $value);
+            }
+        }
     }
 
     private function buildSaslConfig(Conf $conf): void
@@ -93,40 +119,20 @@ class Configuration
 
     private function buildConsumerConfig(Conf $conf): void
     {
-        if (is_null($this->consumerConfig)) {
+        if (is_null($this->getConsumerConfig())) {
             $conf->set('group.id', 'php-kafka-consumer');
         } else {
             $conf->set('group.id', $this->getConsumerConfig()->getGroupId());
         }
     }
+
     private function buildProducerConfig(Conf $conf): void
     {
         $conf->set('enable.idempotence', 'true');
-        if(is_null($this->producerConf)){
+        if (is_null($this->getProducerConfig())) {
             $conf->set('acks', '-1');
         } else {
             $conf->set('acks', $this->getProducerConfig()->getAcks());
         }
-    }
-
-    private function buildGlobalConfigurations(?array $options, Conf $conf): void
-    {
-        $conf->set('bootstrap.servers', $this->getBroker());
-        if (!is_null($options)) {
-            foreach ($options as $key => $value) {
-                $conf->set($key, $value);
-            }
-        }
-    }
-
-    private function defaultGlobalConfigs(): array
-    {
-        return [
-            'queued.max.messages.kbytes' => '10000',
-            'enable.auto.commit' => 'false',
-            'compression.codec' =>'gzip',
-            'max.poll.interval.ms' => '86400000',
-            'auto.offset.reset' => 'smallest',
-        ];
     }
 }

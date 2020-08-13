@@ -2,9 +2,10 @@
 
 namespace PHP\Kafka\Exceptions;
 
+use Exception;
 use Throwable;
 
-class KafkaConsumerException extends \Exception
+class KafkaConsumerException extends Exception
 {
     public function __construct(
         string $message = 'Error consuming kafka topic',

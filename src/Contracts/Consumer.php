@@ -8,7 +8,7 @@ use PHP\Kafka\FailHandler\FailHandler;
 
 abstract class Consumer
 {
-    public abstract function handle(Message $message): void;
+    abstract public function handle(Message $message): void;
 
     public function failed(Message $message, FailHandler $failHandler, Throwable $cause): void
     {

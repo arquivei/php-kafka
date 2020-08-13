@@ -4,7 +4,6 @@ use RdKafka\Message;
 use PHP\Kafka\Contracts\Consumer;
 use PHP\Kafka\Config\Configuration;
 use PHP\Kafka\Config\ConsumerConfiguration;
-use PHP\Kafka\Exceptions\KafkaConsumerException;
 
 require '../../vendor/autoload.php';
 
@@ -20,9 +19,9 @@ $topicOptions = [];
 $logger = (new PHP\Kafka\Log\PhpKafkaLogger('commit-even-with-error'))->getLogger();
 $consumerConfiguration = new ConsumerConfiguration(
     ['simple-topic-example'],
-    1,
     'commit_even_with_error_consumer',
     new PoisonMessageConsumer(),
+    1,
     -1,
     12000,
     $topicOptions);

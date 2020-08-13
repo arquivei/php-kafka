@@ -1,13 +1,9 @@
 <?php
 
-use PHP\Kafka\Config\ProducerConfiguration;
 use PHP\Kafka\Producer;
-use RdKafka\Message;
 use PHP\Kafka\Log\PhpKafkaLogger;
-use PHP\Kafka\Contracts\Consumer;
 use PHP\Kafka\Config\Configuration;
-use PHP\Kafka\Config\ConsumerConfiguration;
-use PHP\Kafka\Exceptions\KafkaConsumerException;
+use PHP\Kafka\Config\ProducerConfiguration;
 
 require '../../vendor/autoload.php';
 

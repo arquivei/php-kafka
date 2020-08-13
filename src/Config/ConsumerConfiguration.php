@@ -6,8 +6,6 @@ use PHP\Kafka\Contracts\Consumer;
 
 class ConsumerConfiguration
 {
-    //TODO PHP DOC
-
     private array $topics;
     private int $commit;
     private string $groupId;
@@ -18,17 +16,17 @@ class ConsumerConfiguration
 
     public function __construct(
         array $topics,
-        int $commit,
         string $groupId,
         Consumer $consumer,
+        int $commit = 1,
         int $maxMessages = -1,
         int $timeoutMs = 120000,
         array $topicOptions = []
     ) {
         $this->topics = $topics;
-        $this->commit = $commit;
         $this->groupId = $groupId;
         $this->consumer = $consumer;
+        $this->commit = $commit;
         $this->maxMessages = $maxMessages;
         $this->timeoutMs = $timeoutMs;
         $this->topicOptions = $topicOptions;
