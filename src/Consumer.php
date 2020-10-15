@@ -2,6 +2,8 @@
 
 namespace PHP\Kafka;
 
+use PHP\Kafka\Commit\CommitterBuilder;
+use PHP\Kafka\Commit\NativeSleeper;
 use Throwable;
 use RdKafka\Message;
 use RdKafka\KafkaConsumer;
@@ -14,12 +16,24 @@ use PHP\Kafka\FailHandler\CommitAlwaysFailHandler;
 
 class Consumer
 {
-    private int $commits;
+    private const IGNORABLE_CONSUME_ERRORS = [
+        RD_KAFKA_RESP_ERR__PARTITION_EOF,
+        RD_KAFKA_RESP_ERR__TIMED_OUT,
+        RD_KAFKA_RESP_ERR_REQUEST_TIMED_OUT,
+        RD_KAFKA_RESP_ERR__TRANSPORT,
+    ];
+
+    private const IGNORABLE_COMMIT_ERRORS = [
+        RD_KAFKA_RESP_ERR__NO_OFFSET,
+    ];
+
     private int $messageNumber = 0;
     private Configuration $config;
     private LoggerInterface $logger;
     private FailHandler $failHandler;
     private KafkaConsumer $kafka;
+    private MessageCounter $messageCounter;
+    private Commit\Committer $committer;
 
     public function __construct(
         Configuration $config,
@@ -31,11 +45,16 @@ class Consumer
         $this->logger = $logger ?? (new Log\PhpKafkaLogger())->getLogger();
         $this->failHandler = $failHandler ?? new CommitAlwaysFailHandler();
         $this->kafka = $kafka ?? new KafkaConsumer($this->config->buildConfigs());
+        $this->messageCounter = new MessageCounter($this->config->getConsumerConfig()->getMaxMessages());
     }
 
     public function consume(): void
     {
-        $this->commits = 0;
+        $this->committer = CommitterBuilder::withConsumer($this->kafka)
+            ->andRetry(new NativeSleeper(), $this->config->getConsumerConfig()->getMaxCommitRetries())
+            ->committingInBatches($this->messageCounter, $this->config->getConsumerConfig()->getCommit())
+            ->build();
+
         $consumerConfiguration = $this->config->getConsumerConfig();
         if(is_null($consumerConfiguration)) {
             throw new InvalidConsumerException();
@@ -44,65 +63,56 @@ class Consumer
         $this->kafka->subscribe($consumerConfiguration->getTopics());
         do {
             $message = $this->kafka->consume($consumerConfiguration->getTimeoutMs());
-            switch ($message->err) {
-                case RD_KAFKA_RESP_ERR_NO_ERROR:
-                    $this->messageNumber++;
-                    $this->handle($message);
-                    break;
-                case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                case RD_KAFKA_RESP_ERR__TIMED_OUT:
-                    // NO MESSAGE
-                    break;
-                default:
-                    throw new KafkaConsumerException($message->errstr());
-            }
+            $this->handleMessage($message);
         } while (!$this->isMaxMessage());
-    }
-
-    private function handle(Message $message): void
-    {
-        try {
-            $consumerConfiguration = $this->config->getConsumerConfig();
-            if(is_null($consumerConfiguration)) {
-               throw new InvalidConsumerException();
-            }
-
-            $consumer = $consumerConfiguration->getConsumer();
-            $consumer->handle($message);
-            $this->commit($message);
-        } catch (Throwable $throwable) {
-            $this->handleException($throwable, $message);
-        }
     }
 
     private function handleException(Throwable $cause, Message $message): void
     {
         try {
             $this->config->getConsumerConfig()->getConsumer()->failed($message, $this->failHandler, $cause);
-            $this->commit($message);
+            $this->committer->commitFailure();
         } catch (Throwable $exception) {
             throw $exception;
-        }
-    }
-
-    private function commit(Message $message): void
-    {
-        try {
-            $this->commits++;
-            if ($this->isMaxMessage() || $this->commits >= $this->config->getConsumerConfig()->getCommit()) {
-                $this->commits = 0;
-                $this->kafka->commit();
-                return;
-            }
-        } catch (Throwable $throwable) {
-            if ($throwable->getCode() != RD_KAFKA_RESP_ERR__NO_OFFSET) {
-                throw $throwable;
-            }
         }
     }
 
     private function isMaxMessage(): bool
     {
         return $this->messageNumber == $this->config->getConsumerConfig()->getMaxMessages();
+    }
+
+    private function handleMessage(Message $message): void
+    {
+        if (RD_KAFKA_RESP_ERR_NO_ERROR === $message->err)  {
+            $this->messageCounter->add();
+            $this->executeMessage($message);
+            return;
+        }
+
+        if (!in_array($message->err, self::IGNORABLE_CONSUME_ERRORS)) {
+            throw new KafkaConsumerException($message->errstr(), $message->err);
+        }
+    }
+
+    private function executeMessage(Message $message): void
+    {
+        try {
+            $this->config->getConsumerConfig()->getConsumer()->handle($message);
+            $this->commit();
+        } catch (Throwable $throwable) {
+            $this->handleException($throwable, $message);
+        }
+    }
+
+    private function commit(): void
+    {
+        try {
+            $this->committer->commitMessage();
+        } catch (Throwable $throwable) {
+            if (!in_array($throwable->getCode(), self::IGNORABLE_COMMIT_ERRORS)) {
+                throw $throwable;
+            }
+        }
     }
 }
