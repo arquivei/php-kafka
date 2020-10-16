@@ -7,8 +7,8 @@ use Throwable;
 class InvalidConsumerException extends \Exception
 {
     public function __construct(
-        $message = 'Invalid consumer',
-        $code = 0,
+        string $message = 'Invalid consumer',
+        int $code = 0,
         Throwable $previous = null
     ) {
         parent::__construct($message, $code, $previous);

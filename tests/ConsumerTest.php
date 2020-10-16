@@ -33,12 +33,15 @@ class ConsumerTest extends TestCase
             1,
             1,
             12000,
-            []);
+            []
+        );
 
-        $configuration = new Configuration('localhost:9092',
+        $configuration = new Configuration(
+            'localhost:9092',
             null,
             null,
-            $consumerConfiguration);
+            $consumerConfiguration
+        );
 
         $message = new Message();
         $message->err = 0;
@@ -66,12 +69,15 @@ class ConsumerTest extends TestCase
             1,
             -1,
             12000,
-            []);
+            []
+        );
 
-        $configuration = new Configuration('localhost:9092',
+        $configuration = new Configuration(
+            'localhost:9092',
             null,
             null,
-            $consumerConfiguration);
+            $consumerConfiguration
+        );
 
         $errorMessage = new Message();
         $errorMessage->err = 1;
@@ -105,14 +111,17 @@ class ConsumerTest extends TestCase
             1,
             1,
             12000,
-            []);
+            []
+        );
 
         $producerConfiguration = new ProducerConfiguration('topic-dlq', 'all');
 
-        $configuration = new Configuration('localhost:9092',
+        $configuration = new Configuration(
+            'localhost:9092',
             null,
             $producerConfiguration,
-            $consumerConfiguration);
+            $consumerConfiguration
+        );
 
         $message = new Message();
         $message->err = 0;

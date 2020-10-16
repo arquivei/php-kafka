@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Tests\Config;
-
 
 use PHP\Kafka\Contracts\Consumer;
 use RdKafka\Message;

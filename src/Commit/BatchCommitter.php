@@ -14,10 +14,10 @@ use PHP\Kafka\MessageCounter;
  */
 class BatchCommitter implements Committer
 {
-    private $commits = 0;
-    private $committer;
-    private $messageCounter;
-    private $batchSize;
+    private int $commits = 0;
+    private Committer $committer;
+    private MessageCounter $messageCounter;
+    private int $batchSize;
 
     public function __construct(Committer $committer, MessageCounter $messageCounter, int $batchSize)
     {

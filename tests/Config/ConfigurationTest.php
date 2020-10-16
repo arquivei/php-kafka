@@ -18,12 +18,15 @@ class ConfigurationTest extends TestCase
             new MyConsumer(),
             -1,
             120000,
-            $topicOptions);
+            $topicOptions
+        );
 
-        $configuration = new Configuration('broker:port',
+        $configuration = new Configuration(
+            'broker:port',
             null,
             null,
-            $consumerConfiguration);
+            $consumerConfiguration
+        );
 
         $conf = $configuration->buildConfigs();
 

@@ -96,16 +96,16 @@ class Configuration
         if (is_null($this->consumerConfig)) {
             $conf->set('group.id', 'php-kafka-consumer');
         } else {
-            $conf->set('group.id', $this->getConsumerConfig()->getGroupId());
+            $conf->set('group.id', $this->consumerConfig->getGroupId());
         }
     }
     private function buildProducerConfig(Conf $conf): void
     {
         $conf->set('enable.idempotence', 'true');
-        if(is_null($this->producerConf)){
+        if (is_null($this->producerConf)) {
             $conf->set('acks', '-1');
         } else {
-            $conf->set('acks', $this->getProducerConfig()->getAcks());
+            $conf->set('acks', $this->producerConf->getAcks());
         }
     }
 
@@ -124,7 +124,7 @@ class Configuration
         return [
             'queued.max.messages.kbytes' => '10000',
             'enable.auto.commit' => 'false',
-            'compression.codec' =>'gzip',
+            'compression.codec' => 'gzip',
             'max.poll.interval.ms' => '86400000',
             'auto.offset.reset' => 'smallest',
         ];

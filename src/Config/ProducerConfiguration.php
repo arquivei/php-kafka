@@ -15,8 +15,7 @@ class ProducerConfiguration
     public function __construct(
         string $topic,
         string $acks = 'all'
-    )
-    {
+    ) {
         $this->acks = $acks;
         $this->topic = $topic;
     }

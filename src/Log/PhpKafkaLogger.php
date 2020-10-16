@@ -12,10 +12,11 @@ class PhpKafkaLogger
 {
     private Logger $logger;
 
-    public function __construct($name = 'PHP-KAFKA-LOG')
+    public function __construct(string $name = 'PHP-KAFKA-LOG')
     {
         $handler = new StreamHandler("php://stdout");
-        $handler->setFormatter(new JsonFormatter())->pushProcessor(new UidProcessor(32));
+        $handler->setFormatter(new JsonFormatter());
+        $handler->pushProcessor(new UidProcessor(32));
         $this->logger = new Logger($name);
         $this->logger->pushHandler($handler);
         $this->logger->pushProcessor(

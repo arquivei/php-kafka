@@ -13,9 +13,9 @@ exec docker run ${DOCKER_OPTS} --rm \
     -u $( id -u ${USER} ):$( id -g ${USER} ) \
     -v "${PWD}":"${PWD}" \
     -v "${COMPOSER_HOME}":/tmp/composer \
-    -w ${PWD} \
-    -e PHP_IDE_CONFIG="serverName=avro-serializer" \
+    -w "${PWD}" \
+    -e PHP_IDE_CONFIG="serverName=php-kafka" \
     -e COMPOSER_HOME="/tmp/composer" \
     --net=host --sig-proxy=true --pid=host \
     --entrypoint="composer" \
-     plus-search-nfe "${@}"
+     php-kafka "${@}"

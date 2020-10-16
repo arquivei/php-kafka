@@ -13,7 +13,7 @@ use RdKafka\KafkaConsumer;
  */
 class KafkaCommitter implements Committer
 {
-    private $consumer;
+    private KafkaConsumer $consumer;
 
     public function __construct(KafkaConsumer $consumer)
     {

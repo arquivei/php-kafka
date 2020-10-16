@@ -17,9 +17,9 @@ class RetryableCommitter implements Committer
         RD_KAFKA_RESP_ERR_REQUEST_TIMED_OUT
     ];
 
-    private $committer;
-    private $sleeper;
-    private $maximumRetries;
+    private Committer $committer;
+    private Sleeper $sleeper;
+    private int $maximumRetries;
 
     public function __construct(Committer $committer, Sleeper $sleeper, int $maximumRetries = 6)
     {
@@ -38,7 +38,7 @@ class RetryableCommitter implements Committer
         $this->doCommit([$this->committer, 'commitFailure']);
     }
 
-    private function doCommit(callable $commitFunc, int $currentRetries = 0, int $timeToWait = 1)
+    private function doCommit(callable $commitFunc, int $currentRetries = 0, int $timeToWait = 1): void
     {
         try {
             $commitFunc();

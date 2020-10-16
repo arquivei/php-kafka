@@ -9,7 +9,12 @@ use RdKafka\KafkaConsumer;
 
 class CommitterBuilder
 {
-    private $committer;
+    private Committer $committer;
+
+    public function __construct()
+    {
+        $this->committer = new NullCommitter();
+    }
 
     public static function withConsumer(KafkaConsumer $consumer): self
     {
