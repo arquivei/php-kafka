@@ -1,6 +1,5 @@
 <?php
 
-
 namespace PHP\Kafka\Exceptions;
 
 use Throwable;

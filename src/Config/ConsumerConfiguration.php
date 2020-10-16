@@ -15,6 +15,7 @@ class ConsumerConfiguration
     private int $maxMessages;
     private int $timeoutMs;
     private array $topicOptions;
+    private int $maxCommitRetries;
 
     public function __construct(
         array $topics,
@@ -23,7 +24,8 @@ class ConsumerConfiguration
         Consumer $consumer,
         int $maxMessages = -1,
         int $timeoutMs = 120000,
-        array $topicOptions = []
+        array $topicOptions = [],
+        int $maxCommitRetries = 6
     ) {
         $this->topics = $topics;
         $this->commit = $commit;
@@ -32,61 +34,46 @@ class ConsumerConfiguration
         $this->maxMessages = $maxMessages;
         $this->timeoutMs = $timeoutMs;
         $this->topicOptions = $topicOptions;
+        $this->maxCommitRetries = $maxCommitRetries;
     }
 
-    /**
-     * @return array
-     */
     public function getTopics(): array
     {
         return $this->topics;
     }
 
-    /**
-     * @return int
-     */
     public function getCommit(): int
     {
         return $this->commit;
     }
 
-    /**
-     * @return string
-     */
     public function getGroupId(): string
     {
         return $this->groupId;
     }
 
-    /**
-     * @return Consumer
-     */
     public function getConsumer(): Consumer
     {
         return $this->consumer;
     }
 
-    /**
-     * @return int
-     */
     public function getMaxMessages(): int
     {
         return $this->maxMessages;
     }
 
-    /**
-     * @return int
-     */
     public function getTimeoutMs(): int
     {
         return $this->timeoutMs;
     }
 
-    /**
-     * @return array
-     */
     public function getTopicOptions(): array
     {
         return $this->topicOptions;
+    }
+
+    public function getMaxCommitRetries(): int
+    {
+        return $this->maxCommitRetries;
     }
 }

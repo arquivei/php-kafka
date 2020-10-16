@@ -10,6 +10,6 @@ class DontCommitFailHandler implements FailHandler
 {
     public function handle(Throwable $cause, ?Message $message = null): void
     {
-       throw new DontCommitException('Will not commit', 1, $cause);
+        throw new DontCommitException('Will not commit', 1, $cause);
     }
 }
