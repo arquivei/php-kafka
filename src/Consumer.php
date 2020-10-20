@@ -5,6 +5,9 @@ namespace PHP\Kafka;
 use PHP\Kafka\Commit\CommitterBuilder;
 use PHP\Kafka\Commit\NativeSleeper;
 use PHP\Kafka\Config\ConsumerConfiguration;
+use PHP\Kafka\Decoder\MessageDecoder;
+use PHP\Kafka\Decoder\NoDecoding;
+use PHP\Kafka\Exceptions\CannotDecodeMessageException;
 use PHP\Kafka\Exceptions\NoConsumerConfigurationException;
 use Throwable;
 use RdKafka\Message;
@@ -13,7 +16,6 @@ use Psr\Log\LoggerInterface;
 use PHP\Kafka\Config\Configuration;
 use PHP\Kafka\FailHandler\FailHandler;
 use PHP\Kafka\Exceptions\KafkaConsumerException;
-use PHP\Kafka\Exceptions\InvalidConsumerException;
 use PHP\Kafka\FailHandler\CommitAlwaysFailHandler;
 
 class Consumer
@@ -29,7 +31,6 @@ class Consumer
         RD_KAFKA_RESP_ERR__NO_OFFSET,
     ];
 
-    private int $messageNumber = 0;
     private Configuration $config;
     private LoggerInterface $logger;
     private FailHandler $failHandler;
@@ -69,7 +70,7 @@ class Consumer
     private function handleException(Throwable $cause, Message $message): void
     {
         try {
-            $this->getConsumerConfig()->getConsumer()->failed($message, $this->failHandler, $cause);
+            $this->failHandler->handle($cause, $message);
             $this->committer->commitFailure();
         } catch (Throwable $exception) {
             throw $exception;
@@ -78,7 +79,7 @@ class Consumer
 
     private function isMaxMessage(): bool
     {
-        return $this->messageNumber == $this->getConsumerConfig()->getMaxMessages();
+        return $this->messageCounter->isMaxMessage();
     }
 
     private function handleMessage(Message $message): void
@@ -97,7 +98,8 @@ class Consumer
     private function executeMessage(Message $message): void
     {
         try {
-            $this->getConsumerConfig()->getConsumer()->handle($message);
+            $decodedMessage = $this->decodeMessage($message->payload);
+            $this->getConsumerConfig()->getHandler()($decodedMessage);
             $this->commit();
         } catch (Throwable $throwable) {
             $this->handleException($throwable, $message);
@@ -122,5 +124,20 @@ class Consumer
         }
 
         throw new NoConsumerConfigurationException();
+    }
+
+    /**
+     * @param string $rawMessage
+     *
+     * @return mixed The decoded message
+     */
+    private function decodeMessage(string $rawMessage)
+    {
+        try {
+            return $this->getConsumerConfig()->getDecoder()->decode($rawMessage);
+        } catch (CannotDecodeMessageException $exception) {
+            $this->getConsumerConfig()->getListener()->messageDecodingFailed($rawMessage);
+            return $rawMessage;
+        }
     }
 }

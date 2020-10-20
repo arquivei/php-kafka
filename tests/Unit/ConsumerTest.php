@@ -1,36 +1,37 @@
 <?php
 
-namespace Tests;
+namespace Tests\Unit;
 
 use Monolog\Logger;
-use RdKafka\Message;
-use PHP\Kafka\Consumer;
-use RdKafka\KafkaConsumer;
-use PHPUnit\Framework\TestCase;
 use PHP\Kafka\Config\Configuration;
-use PHP\Kafka\FailHandler\DLQFailHandler;
-use PHP\Kafka\Config\ProducerConfiguration;
 use PHP\Kafka\Config\ConsumerConfiguration;
+use PHP\Kafka\Config\ProducerConfiguration;
+use PHP\Kafka\Consumer;
 use PHP\Kafka\Exceptions\KafkaConsumerException;
+use PHP\Kafka\FailHandler\DLQFailHandler;
+use PHPUnit\Framework\TestCase;
+use RdKafka\KafkaConsumer;
+use RdKafka\Message;
+use Tests\Fixture\FakeHandler;
 
 class ConsumerTest extends TestCase
 {
-    private $consumerMock;
     private $kafkaConsumerMock;
 
     protected function setUp(): void
     {
         $this->kafkaConsumerMock = $this->createMock(KafkaConsumer::class);
-        $this->consumerMock = $this->getMockForAbstractClass(\PHP\Kafka\Contracts\Consumer::class);
     }
 
     public function testConsumeMessageWithSuccessAndCommit(): void
     {
+        $fakeHandler = new FakeHandler();
+
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic-test'],
-            'consumer-group-id-2',
-            $this->consumerMock,
             1,
+            'consumer-group-id-2',
+            $fakeHandler,
             1,
             12000,
             []
@@ -52,21 +53,23 @@ class ConsumerTest extends TestCase
         $this->kafkaConsumerMock->method('subscribe')->withAnyParameters()->willReturnSelf();
         $this->kafkaConsumerMock->method('consume')->withAnyParameters()->willReturn($message);
 
-        $this->consumerMock->expects($this->once())->method('handle')->with($this->equalTo($message));
         $this->kafkaConsumerMock->expects($this->once())->method('commit');
 
         $consumer = new Consumer($configuration, new Logger('test-logging'), null, $this->kafkaConsumerMock);
         $consumer->consume();
+
+        $this->assertEquals($message->payload, $fakeHandler->lastMessage());
     }
 
     public function testConsumeMessageWithError(): void
     {
         $this->expectException(KafkaConsumerException::class);
+
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic-test'],
-            'consumer-group-id-3',
-            $this->consumerMock,
             1,
+            'consumer-group-id-3',
+            new FakeHandler(),
             -1,
             12000,
             []
@@ -86,7 +89,6 @@ class ConsumerTest extends TestCase
         $this->kafkaConsumerMock->method('subscribe')->withAnyParameters()->willReturnSelf();
         $this->kafkaConsumerMock->method('consume')->withAnyParameters()->willReturn($errorMessage);
 
-        $this->consumerMock->expects($this->never())->method('handle');
         $this->kafkaConsumerMock->expects($this->never())->method('commit');
 
         $consumer = new Consumer($configuration, new Logger('test-logging'), null, $this->kafkaConsumerMock);
@@ -96,19 +98,12 @@ class ConsumerTest extends TestCase
     public function testConsumeMessageHandlingErrorWhenFail(): void
     {
         $logger = new Logger('test-logging');
-        $consumer = new class extends \PHP\Kafka\Contracts\Consumer
-        {
-            public function handle(Message $message): void
-            {
-                throw new \Exception("ERROR");
-            }
-        };
 
         $consumerConfiguration = new ConsumerConfiguration(
             ['topic-test'],
-            'consumer-group-id-4',
-            $consumer,
             1,
+            'consumer-group-id-4',
+            \Closure::fromCallable([$this, 'handleWithException']),
             1,
             12000,
             []
@@ -135,7 +130,12 @@ class ConsumerTest extends TestCase
 
         $this->kafkaConsumerMock->expects($this->once())->method('commit');
 
-        $consumer = new Consumer($configuration, $logger, $failHandlerMock, $this->kafkaConsumerMock);
-        $consumer->consume();
+        $handler = new Consumer($configuration, $logger, $failHandlerMock, $this->kafkaConsumerMock);
+        $handler->consume();
+    }
+
+    private function handleWithException()
+    {
+        throw new \Exception('ERROR');
     }
 }
