@@ -1,4 +1,6 @@
-# PHP KAFKA CONSUMER
+# PHP Kafka
+
+[![Build Status](https://github.com/arquivei/php-kafka/workflows/Build/badge.svg)](https://github.com/arquivei/php-kafka/actions)
 
 A PHP client for Apache Kafka
 
