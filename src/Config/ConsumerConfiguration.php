@@ -2,39 +2,47 @@
 
 namespace PHP\Kafka\Config;
 
-use PHP\Kafka\Contracts\Consumer;
+use Closure;
+use PHP\Kafka\Decoder\MessageDecoder;
+use PHP\Kafka\Decoder\NoDecoding;
+use PHP\Kafka\Listener\ConsumerListener;
+use PHP\Kafka\Listener\NullListener;
 
 class ConsumerConfiguration
 {
-    //TODO PHP DOC
-
     private array $topics;
     private int $commit;
     private string $groupId;
-    private Consumer $consumer;
+    private Closure $handler;
     private int $maxMessages;
     private int $timeoutMs;
     private array $topicOptions;
     private int $maxCommitRetries;
+    private ConsumerListener $listener;
+    private MessageDecoder $decoder;
 
     public function __construct(
         array $topics,
         int $commit,
         string $groupId,
-        Consumer $consumer,
+        callable $handler,
         int $maxMessages = -1,
         int $timeoutMs = 120000,
         array $topicOptions = [],
-        int $maxCommitRetries = 6
+        int $maxCommitRetries = 6,
+        ?ConsumerListener $consumerListener = null,
+        ?MessageDecoder $messageDecoder = null
     ) {
         $this->topics = $topics;
         $this->commit = $commit;
         $this->groupId = $groupId;
-        $this->consumer = $consumer;
+        $this->handler = Closure::fromCallable($handler);
         $this->maxMessages = $maxMessages;
         $this->timeoutMs = $timeoutMs;
         $this->topicOptions = $topicOptions;
         $this->maxCommitRetries = $maxCommitRetries;
+        $this->listener = $consumerListener ?? new NullListener();
+        $this->decoder = $messageDecoder ?? new NoDecoding();
     }
 
     public function getTopics(): array
@@ -52,9 +60,9 @@ class ConsumerConfiguration
         return $this->groupId;
     }
 
-    public function getConsumer(): Consumer
+    public function getHandler(): callable
     {
-        return $this->consumer;
+        return $this->handler;
     }
 
     public function getMaxMessages(): int
@@ -75,5 +83,15 @@ class ConsumerConfiguration
     public function getMaxCommitRetries(): int
     {
         return $this->maxCommitRetries;
+    }
+
+    public function getListener(): ConsumerListener
+    {
+        return $this->listener;
+    }
+
+    public function getDecoder(): MessageDecoder
+    {
+        return $this->decoder;
     }
 }
