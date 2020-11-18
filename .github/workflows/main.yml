@@ -1,9 +1,8 @@
 name: Build
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
+  push:
     branches: [ master ]
 
 jobs:
@@ -45,3 +44,8 @@ jobs:
 
       - name: Run checks
         run: PHP=php make check
+
+      - name: Run checks in lower versions
+        run: |
+          composer update --prefer-lowest --prefer-dist --prefer-stable --no-interaction
+          PHP=php make check

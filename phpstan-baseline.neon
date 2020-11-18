@@ -1,0 +1,7 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\#1 \\$timeout_ms of method RdKafka\\\\KafkaConsumer\\:\\:consume\\(\\) expects int, string given\\.$#"
+			count: 1
+			path: src/Consumer.php
+

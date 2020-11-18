@@ -13,10 +13,11 @@ class LoggingListener implements \PHP\Kafka\Listener\ConsumerListener
         $this->logger = $logger;
     }
 
-    public function messageDecodingFailed(string $rawMessage): void
+    public function messageDecodingFailed(\PHP\Kafka\Exceptions\CannotDecodeMessageException $error): void
     {
         $this->logger->warning('Received a message that could not be decoded', [
-            'message' => $rawMessage,
+            'message' => $error->getRawMessage(),
+            'error' => $error->getMessage(),
         ]);
     }
 }
