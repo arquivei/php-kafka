@@ -5,8 +5,6 @@ namespace PHP\Kafka;
 use PHP\Kafka\Commit\CommitterBuilder;
 use PHP\Kafka\Commit\NativeSleeper;
 use PHP\Kafka\Config\ConsumerConfiguration;
-use PHP\Kafka\Decoder\MessageDecoder;
-use PHP\Kafka\Decoder\NoDecoding;
 use PHP\Kafka\Exceptions\CannotDecodeMessageException;
 use PHP\Kafka\Exceptions\NoConsumerConfigurationException;
 use Throwable;
@@ -136,7 +134,7 @@ class Consumer
         try {
             return $this->getConsumerConfig()->getDecoder()->decode($rawMessage);
         } catch (CannotDecodeMessageException $exception) {
-            $this->getConsumerConfig()->getListener()->messageDecodingFailed($rawMessage);
+            $this->getConsumerConfig()->getListener()->messageDecodingFailed($exception);
             return $rawMessage;
         }
     }
